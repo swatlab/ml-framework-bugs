@@ -1,0 +1,15 @@
+﻿framework,projectLink,bugRepo,website,apiUri
+TensorFlow,https://github.com/tensorflow/tensorflow,https://github.com/tensorflow/tensorflow/issues,https://www.tensorflow.org/,https://api.github.com/repos/tensorflow/tensorflow/issues
+Keras,https://github.com/keras-team/keras,https://github.com/keras-team/keras/issues,https://keras.io/,https://api.github.com/repos/keras-team/keras/issues
+PyTorch,https://github.com/pytorch/pytorch,https://github.com/pytorch/pytorch/issues,https://pytorch.org/,https://api.github.com/repos/pytorch/pytorch/issues
+Caffe,https://github.com/BVLC/caffe,https://github.com/BVLC/caffe/issues,http://caffe.berkeleyvision.org/,https://api.github.com/repos/BVLC/caffe/issues
+Theano,https://github.com/Theano/Theano,https://github.com/Theano/Theano/issues,http://www.deeplearning.net/software/theano/,https://api.github.com/repos/Theano/Theano/issues
+MXNET,https://github.com/apache/incubator-mxnet,https://github.com/apache/incubator-mxnet/issues,https://mxnet.apache.org/,https://api.github.com/repos/apache/incubator-mxnet/issues
+Microsoft,https://github.com/Microsoft/CNTK,https://github.com/Microsoft/CNTK/issues,https://docs.microsoft.com/en-us/cognitive-toolkit/,https://api.github.com/repos/Microsoft/CNTK/issues
+DeepLearning4J,https://github.com/deeplearning4j/deeplearning4j,https://github.com/deeplearning4j/deeplearning4j/issues,http://deeplearning4j.org/,https://api.github.com/repos/deeplearning4j/deeplearning4j/issues
+Chainer,https://github.com/chainer/chainer,https://github.com/chainer/chainer/issues,https://chainer.org/,https://api.github.com/repos/chainer/chainer/issues
+FastAI,https://github.com/fastai/fastai,https://github.com/fastai/fastai/issues,https://www.fast.ai/,https://api.github.com/repos/fastai/fastai/issues
+Sonnet,https://github.com/deepmind/sonnet,https://github.com/deepmind/sonnet/issues,https://sonnet.dev/,https://api.github.com/repos/deepmind/sonnet/issues
+Gluon,https://github.com/freifunk-gluon/gluon,https://github.com/freifunk-gluon/gluon/issues,https://gluon.readthedocs.io/en/v2018.2.x/,https://api.github.com/repos/freifunk-gluon/gluon/issues
+Swift,https://github.com/tensorflow/swift,https://github.com/tensorflow/swift/issues,https://www.tensorflow.org/swift/,https://api.github.com/repos/tensorflow/swift/issues
+ONNX,https://github.com/onnx/onnx,https://github.com/onnx/onnx/issues,https://onnx.ai/,https://api.github.com/repos/onnx/onnx/issues
