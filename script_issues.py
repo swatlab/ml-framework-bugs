@@ -1,10 +1,10 @@
+import os
 import json
 import pandas as pd
-import os
-import requests
+from pathlib import Path
 
-CLIENT_ID = "***REMOVED***"
-CLIENT_SECRET = "***REMOVED***"
+import requests
+from dotenv import load_dotenv
 
 
 def get_issues(project_row, label = None):
@@ -67,6 +67,8 @@ def main():
 
 
 if __name__ == "__main__":
-    from pathlib import Path
+    load_dotenv()
+    CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
+    CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
     base_issues_dir = Path("data/issues/")
     main()
