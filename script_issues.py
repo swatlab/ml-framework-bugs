@@ -40,6 +40,8 @@ def get_max_pages_from_header(header):
     last_page_number = int(parse_qs(urlparse(last_page_uri).query)["page"][0])
     return last_page_number
 
+def clean_issue_label_name(label):
+    return label.replace(":", "_").replace("/", "_")
 
 def main():
     framework_label_mapping = { "TensorFlow": ["type:bug/performance", "prtype:bugfix"] }
@@ -48,12 +50,13 @@ def main():
     base_issues_dir.mkdir(parents=True, exist_ok=True)
     for i, row in df.iterrows():
         framw_name = row['framework']
+        label_names = framework_label_mapping.get(framw_name, [None])
         print("label_names", label_names)
         for label in label_names:
             issues_for_label = get_issues(row, label=label)
             
-            safe_label_name = clean_issue_label_name(label)
             if label:
+                safe_label_name = clean_issue_label_name(label)
                 label_names = framework_label_mapping.get(framw_name, [None])
                 filename = "{}_issues_{}.json".format(row['framework'], safe_label_name) 
             else:
