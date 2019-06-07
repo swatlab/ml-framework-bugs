@@ -20,12 +20,13 @@ def get_issues(framw_row, label = None):
     max_pages = get_max_pages_from_header(resp.headers)
     if max_pages is None: # No pages are returned by the Link header
         return [js_resp]
-    responses = [js_resp]
+    responses = js_resp
+    assert isinstance(responses, list)
     for i in range(2, max_pages+1):
         params["page"] = i
         resp = requests.get(issues_uri, params = params)
         js_resp = resp.json()
-        responses.append(js_resp)
+        responses.extend(js_resp)
     return responses
 
 
