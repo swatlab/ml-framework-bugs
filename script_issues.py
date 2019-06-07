@@ -7,8 +7,8 @@ import requests
 from dotenv import load_dotenv
 
 
-def get_issues(project_row, label = None):
-    issues_uri = project_row["apiUri"]
+def get_issues(framw_row, label = None):
+    issues_uri = framw_row["apiUri"]
     params = { "client_id": CLIENT_ID, "client_secret": CLIENT_SECRET, "state": "all", 
                "per_page": 100}
     if label:
@@ -45,10 +45,10 @@ def clean_issue_label_name(label):
 
 def main():
     framework_label_mapping = { "TensorFlow": ["type:bug/performance", "prtype:bugfix"] }
-    df = pd.read_csv("test.csv")
+    framework_df = pd.read_csv("framework_dataframe.csv")
     
     base_issues_dir.mkdir(parents=True, exist_ok=True)
-    for i, row in df.iterrows():
+    for i, row in framework_df.iterrows():
         framw_name = row['framework']
         label_names = framework_label_mapping.get(framw_name, [None])
         print("label_names", label_names)
