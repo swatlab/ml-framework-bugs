@@ -83,7 +83,7 @@ def write_closed_issues_to_csv(json_issues_path=BASE_ISSUES_DIR):
 
         _df = pd.read_json(flattened_json_string)
         _df = _df[_df['state']=='closed']
-        _df.to_csv(CLOSED_ISSUES_DIR / jf.name, index=False)
+        _df.to_csv(CLOSED_ISSUES_DIR / '{}.csv'.format(jf.stem), index=False)
 
 if __name__ == "__main__":
     load_dotenv()
