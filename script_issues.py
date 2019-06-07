@@ -6,6 +6,7 @@ from pathlib import Path
 import requests
 from dotenv import load_dotenv
 
+BASE_ISSUES_DIR = Path("data/issues/")
 
 def get_issues(framw_row, label = None):
     issues_uri = framw_row["apiUri"]
@@ -48,7 +49,7 @@ def main():
     framework_label_mapping = { "TensorFlow": ["type:bug/performance", "prtype:bugfix"] }
     framework_df = pd.read_csv("framework_dataframe.csv")
     
-    base_issues_dir.mkdir(parents=True, exist_ok=True)
+    BASE_ISSUES_DIR.mkdir(parents=True, exist_ok=True)
     for i, row in framework_df.iterrows():
         framw_name = row['framework']
         label_names = framework_label_mapping.get(framw_name, [None])
@@ -63,13 +64,30 @@ def main():
             else:
                 filename = '{}_issues.json'.format(row['framework'])
             
-            with open(base_issues_dir / filename, 'w') as f:
+            with open(BASE_ISSUES_DIR / filename, 'w') as f:
                 json.dump(issues_for_label, f)
 
+def write_closed_issues_to_csv(json_issues_path=BASE_ISSUES_DIR):
+    CLOSED_ISSUES_DIR = Path('data/closed_issues/')
+    CLOSED_ISSUES_DIR.mkdir(parents=True, exist_ok=True)
+
+    for jf in Path.glob(json_issues_path, pattern='*.json'):
+        with open(jf, 'r') as f:
+            json_obj = json.load(f)
+        if isinstance(json_obj[0], list):
+            # If extraction was a list of list (backwards compatibility)
+            flattened = [x for i in json_obj for x in i]
+        else:
+            flattened = json_obj
+        flattened_json_string = json.dumps(flattened) # Dump to string for pandas to read (only accepts str or paths)
+
+        _df = pd.read_json(flattened_json_string)
+        _df = _df[_df['state']=='closed']
+        _df.to_csv(CLOSED_ISSUES_DIR / jf.name, index=False)
 
 if __name__ == "__main__":
     load_dotenv()
     CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
     CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
-    base_issues_dir = Path("data/issues/")
-    main()
+    # main()
+    write_closed_issues_to_csv()
