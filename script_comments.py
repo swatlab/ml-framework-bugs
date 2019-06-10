@@ -8,7 +8,6 @@ from dotenv import load_dotenv
 
 request_uri = {}
 BASE_ISSUES_DIR = Path("data/issues/")
-BASE_COMMENTS_DIR = Path("data/closed_issues/")
 
 # def get_comments(framw_row, label = None):
 #     issues_uri = framw_row["apiUri"]
@@ -35,41 +34,48 @@ BASE_COMMENTS_DIR = Path("data/closed_issues/")
 #         responses.extend(js_resp)
 #     return responses
 
-def get_comments(framw_row, label = None):
-    framework_comments = {}
-    for i, issue in sonnet_closed_issues.iterrows():
-        #
-        comments_uri = "https://api.github.com/repos/deepmind/sonnet/issues/132/comments"#issues_uri + issue['number'] + "/comments"
-        print(comments_uri)
-        params = { "client_id": CLIENT_ID, "client_secret": CLIENT_SECRET, 
-                   "per_page": 100}
-        #
-        label = None
-        if label:
-            assert isinstance(label, str)
-            params['labels'] = label
-        resp = requests.get(comments_uri, params = params)
-    
-        js_resp = resp.json()
-        max_pages = 10#get_max_pages_from_header(resp.headers)
-        #if max_pages is None: # No pages are returned by the Link header
-            #return [js_resp]
-        responses = js_resp
+def get_comments():
+    CLOSED_ISSUES_DIR = Path('data/closed_issues/')
+    CLOSED_ISSUES_DIR.mkdir(parents=True, exist_ok=True)
+    closed_issues_path = CLOSED_ISSUES_DIR
+
+    for csv in Path.glob(closed_issues_path, pattern='*.csv'):
+        closed_issues = pd.read_csv(csv)
         
-        assert isinstance(responses, list)
-        for i in range(2, max_pages+1):
-            params["page"] = i
+        for i, issue in closed_issues.iterrows():
+            framework_comments = {}
+            #CHANGE THIS URL, IT WAS FOR INTEGRATION PURPOSE ONLY
+            comments_uri = "https://api.github.com/repos/deepmind/sonnet/issues/132/comments"#issue["comments_url"] # issues_uri + issue['number'] + "/comments"
+            params = { "client_id": CLIENT_ID, "client_secret": CLIENT_SECRET, 
+                       "per_page": 100}
+            
             resp = requests.get(comments_uri, params = params)
+        
             js_resp = resp.json()
-            responses.extend(js_resp)
+            max_pages = get_max_pages_from_header(resp.headers)
+            
+            if max_pages is None: # No pages are returned by the Link header
+                max_pages = 0
+                # print("j'exit")
+                # return [js_resp]
+            
+            responses = js_resp
+            
+            assert isinstance(responses, list)
+            for i in range(2, max_pages+1):
+                params["page"] = i
+                resp = requests.get(comments_uri, params = params)
+                js_resp = resp.json()
+                responses.extend(js_resp)
+            
+            all_issue_comments = responses #all_comments = get_all_comments_for_issue(issue)
+            
+            framework_comments[issue.number] = all_issue_comments
+            
+            with open(CLOSED_ISSUES_DIR / '{}.json'.format(csv.stem), 'w') as f:
+                json.dump(framework_comments, f)
+            break
         
-        all_issue_comments = responses #all_comments = get_all_comments_for_issue(issue)
-        
-        framework_comments[issue.number] = all_issue_comments
-        
-        with open(BASE_COMMENTS_DIR / "test.json", 'w') as f:
-                    json.dump(framework_comments, f)
-        break
     
 def get_max_pages_from_header(header):
     from urllib.parse import urlparse, parse_qs
@@ -85,11 +91,8 @@ def get_max_pages_from_header(header):
 def clean_issue_label_name(label):
     return label.replace(":", "_").replace("/", "_")
 
-def main():
-    framework_label_mapping = { "TensorFlow": ["type:bug/performance", "prtype:bugfix"] }
-    framework_df = pd.read_csv("framework_dataframe.csv")
-    
-    BASE_COMMENTS_DIR.mkdir(parents=True, exist_ok=True)
+def main():    
+    CLOSED_ISSUES_DIR.mkdir(parents=True, exist_ok=True)
     for i, row in framework_df.iterrows():
         framw_name = row['framework']
         label_names = framework_label_mapping.get(framw_name, [None])
@@ -104,27 +107,8 @@ def main():
             else:
                 filename = '{}_issues_comments.json'.format(row['framework'])
             
-            with open(BASE_COMMENTS_DIR / filename, 'w') as f:
+            with open(CLOSED_ISSUES_DIR / filename, 'w') as f:
                 json.dump(issues_for_label, f)
-
-# def get_closed_issues(json_issues_path=BASE_ISSUES_DIR):
-#     CLOSED_ISSUES_DIR = Path('data/closed_issues/')
-#     CLOSED_ISSUES_DIR.mkdir(parents=True, exist_ok=True)
-#     kek = 1
-#     for jf in Path.glob(json_issues_path, pattern='*.json'):
-#         with open(jf, 'r') as f:
-#             json_obj = json.load(f)
-#         if isinstance(json_obj[0], list):
-#             # If extraction was a list of list (backwards compatibility)
-#             flattened = [x for i in json_obj for x in i]
-#         else:
-#             flattened = json_obj
-#         flattened_json_string = json.dumps(flattened) # Dump to string for pandas to read (only accepts str or paths)
-
-#         _df = pd.read_json(flattened_json_string)
-#         _df = _df[_df['state']=='closed']
-#         closed_issues_urls = _df['url'].values
-#         request_uri[jf.stem] = [closed_issues_urls]
         
 
 def write_closed_issues_to_csv(json_issues_path=BASE_ISSUES_DIR):
@@ -149,5 +133,5 @@ if __name__ == "__main__":
     load_dotenv()
     CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
     CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
-    main()
+    get_comments()
     # write_closed_issues_to_csv()
