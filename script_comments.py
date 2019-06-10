@@ -6,31 +6,31 @@ from pathlib import Path
 import requests
 from dotenv import load_dotenv
 
-BASE_COMMENTS_DIR = Path("data/issues")
+request_uri = {}
+BASE_ISSUES_DIR = Path("data/issues/")
+BASE_COMMENTS_DIR = Path("data/closed_issues/")
 
 def get_issues(framw_row, label = None):
     issues_uri = framw_row["apiUri"]
-    comments_uri = issues_uri + "\comments"
-    params = { "client_id": CLIENT_ID, "client_secret": CLIENT_SECRET, "state"
+    comments_uri = issues_uri \ comments
+    params = { "client_id": CLIENT_ID, "client_secret": CLIENT_SECRET, "state": "closed", 
                "per_page": 100}
     if label:
         assert isinstance(label, str)
         params['labels'] = label
-        
-    print("comments_uri : ", comments_uri)
-    resp = requests.get(comments_uri, params = params)
+    resp = requests.get(issues_uri, params = params)
 
     js_resp = resp.json()
     max_pages = get_max_pages_from_header(resp.headers)
-    # if max_pages is None: # No pages are returned by the Link header
-    #     return [js_resp]
-    # responses = js_resp
-    # assert isinstance(responses, list)
-    # for i in range(2, max_pages+1):
-    #     params["page"] = i
-    #     resp = requests.get(issues_uri, params = params)
-    #     js_resp = resp.json()
-    #     responses.extend(js_resp)
+    if max_pages is None: # No pages are returned by the Link header
+        return [js_resp]
+    responses = js_resp
+    assert isinstance(responses, list)
+    for i in range(2, max_pages+1):
+        params["page"] = i
+        resp = requests.get(issues_uri, params = params)
+        js_resp = resp.json()
+        responses.extend(js_resp)
     return responses
 
 
@@ -70,6 +70,26 @@ def main():
             with open(BASE_ISSUES_DIR / filename, 'w') as f:
                 json.dump(issues_for_label, f)
 
+def get_closed_issues(json_issues_path=BASE_ISSUES_DIR):
+    CLOSED_ISSUES_DIR = Path('data/closed_issues/')
+    CLOSED_ISSUES_DIR.mkdir(parents=True, exist_ok=True)
+    kek = 1
+    for jf in Path.glob(json_issues_path, pattern='*.json'):
+        with open(jf, 'r') as f:
+            json_obj = json.load(f)
+        if isinstance(json_obj[0], list):
+            # If extraction was a list of list (backwards compatibility)
+            flattened = [x for i in json_obj for x in i]
+        else:
+            flattened = json_obj
+        flattened_json_string = json.dumps(flattened) # Dump to string for pandas to read (only accepts str or paths)
+
+        _df = pd.read_json(flattened_json_string)
+        _df = _df[_df['state']=='closed']
+        closed_issues_urls = _df['url'].values
+        request_uri[jf.stem] = [closed_issues_urls]
+        
+
 def write_closed_issues_to_csv(json_issues_path=BASE_ISSUES_DIR):
     CLOSED_ISSUES_DIR = Path('data/closed_issues/')
     CLOSED_ISSUES_DIR.mkdir(parents=True, exist_ok=True)
@@ -92,8 +112,6 @@ if __name__ == "__main__":
     load_dotenv()
     CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
     CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
-    framework_df = pd.read_csv("framework_dataframe.csv")
-    get_issues(framework_df.iloc[0], label = None)
     # main()
+    get_closed_issues()
     # write_closed_issues_to_csv()
-
