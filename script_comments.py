@@ -10,30 +10,67 @@ request_uri = {}
 BASE_ISSUES_DIR = Path("data/issues/")
 BASE_COMMENTS_DIR = Path("data/closed_issues/")
 
+# def get_comments(framw_row, label = None):
+#     issues_uri = framw_row["apiUri"]
+#     comments_uri = issues_uri + "/comments"
+#     print(comments_uri)
+#     params = { "client_id": CLIENT_ID, "client_secret": CLIENT_SECRET, "state": "closed", 
+#                "per_page": 100}
+#     if label:
+#         assert isinstance(label, str)
+#         params['labels'] = label
+#     resp = requests.get(comments_uri, params = params)
+
+#     js_resp = resp.json()
+#     max_pages = get_max_pages_from_header(resp.headers)
+#     if max_pages is None: # No pages are returned by the Link header
+#         return [js_resp]
+#     responses = js_resp
+#     return responses
+#     assert isinstance(responses, list)
+#     for i in range(2, max_pages+1):
+#         params["page"] = i
+#         resp = requests.get(comments_uri, params = params)
+#         js_resp = resp.json()
+#         responses.extend(js_resp)
+#     return responses
+
 def get_comments(framw_row, label = None):
-    issues_uri = framw_row["apiUri"]
-    comments_uri = issues_uri + "\comments"
-    params = { "client_id": CLIENT_ID, "client_secret": CLIENT_SECRET, "state": "closed", 
-               "per_page": 100}
-    if label:
-        assert isinstance(label, str)
-        params['labels'] = label
-    resp = requests.get(comments_uri, params = params)
-
-    js_resp = resp.json()
-    max_pages = get_max_pages_from_header(resp.headers)
-    if max_pages is None: # No pages are returned by the Link header
-        return [js_resp]
-    responses = js_resp
-    assert isinstance(responses, list)
-    for i in range(2, max_pages+1):
-        params["page"] = i
+    framework_comments = {}
+    for i, issue in sonnet_closed_issues.iterrows():
+        #
+        comments_uri = "https://api.github.com/repos/deepmind/sonnet/issues/132/comments"#issues_uri + issue['number'] + "/comments"
+        print(comments_uri)
+        params = { "client_id": CLIENT_ID, "client_secret": CLIENT_SECRET, 
+                   "per_page": 100}
+        #
+        label = None
+        if label:
+            assert isinstance(label, str)
+            params['labels'] = label
         resp = requests.get(comments_uri, params = params)
+    
         js_resp = resp.json()
-        responses.extend(js_resp)
-    return responses
-
-
+        max_pages = 10#get_max_pages_from_header(resp.headers)
+        #if max_pages is None: # No pages are returned by the Link header
+            #return [js_resp]
+        responses = js_resp
+        
+        assert isinstance(responses, list)
+        for i in range(2, max_pages+1):
+            params["page"] = i
+            resp = requests.get(comments_uri, params = params)
+            js_resp = resp.json()
+            responses.extend(js_resp)
+        
+        all_issue_comments = responses #all_comments = get_all_comments_for_issue(issue)
+        
+        framework_comments[issue.number] = all_issue_comments
+        
+        with open(BASE_COMMENTS_DIR / "test.json", 'w') as f:
+                    json.dump(framework_comments, f)
+        break
+    
 def get_max_pages_from_header(header):
     from urllib.parse import urlparse, parse_qs
     link_header = header.get("Link")
