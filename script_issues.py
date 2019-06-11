@@ -2,6 +2,7 @@ import os
 import json
 import pandas as pd
 from pathlib import Path
+import datetime
 
 import requests
 from dotenv import load_dotenv
@@ -19,15 +20,25 @@ def get_issues(framw_row, label = None):
 
     js_resp = resp.json()
     max_pages = get_max_pages_from_header(resp.headers)
+    print("max pages : ", max_pages)
     if max_pages is None: # No pages are returned by the Link header
         return [js_resp]
     responses = js_resp
     assert isinstance(responses, list)
     for i in range(2, max_pages+1):
-        params["page"] = i
-        resp = requests.get(issues_uri, params = params)
-        js_resp = resp.json()
-        responses.extend(js_resp)
+        while True:
+            try:
+                params["page"] = i
+                #sleep(5)
+                resp = requests.get(issues_uri, params = params)
+                print("Get page ", i,framw_row['framework'], " at ", datetime.datetime.now())
+                js_resp = resp.json()
+                responses.extend(js_resp)
+            except (ConnectionError, requests.exceptions.ChunkedEncodingError):
+                continue
+            except :
+                continue
+            break
     return responses
 
 
@@ -46,14 +57,14 @@ def clean_issue_label_name(label):
     return label.replace(":", "_").replace("/", "_")
 
 def main():
-    framework_label_mapping = { "TensorFlow": ["type:bug/performance", "prtype:bugfix"] }
+    framework_label_mapping = {}# "TensorFlow": ["type:bug/performance", "prtype:bugfix"] }
     framework_df = pd.read_csv("framework_dataframe.csv")
     
     BASE_ISSUES_DIR.mkdir(parents=True, exist_ok=True)
     for i, row in framework_df.iterrows():
         framw_name = row['framework']
         label_names = framework_label_mapping.get(framw_name, [None])
-        print("label_names", label_names)
+        print(framw_name)
         for label in label_names:
             issues_for_label = get_issues(row, label=label)
             
@@ -89,5 +100,5 @@ if __name__ == "__main__":
     load_dotenv()
     CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
     CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
-    # main()
+    main()
     write_closed_issues_to_csv()
