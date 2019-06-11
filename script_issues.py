@@ -35,8 +35,7 @@ def get_issues(framw_row, label = None):
                 js_resp = resp.json()
                 responses.extend(js_resp)
             except (ConnectionError, requests.exceptions.ChunkedEncodingError):
-                continue
-            except :
+                sleep(10)
                 continue
             break
     return responses
