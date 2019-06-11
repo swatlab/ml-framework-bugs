@@ -10,31 +10,6 @@ from dotenv import load_dotenv
 request_uri = {}
 BASE_ISSUES_DIR = Path("data/issues/")
 
-# def get_comments(framw_row, label = None):
-#     issues_uri = framw_row["apiUri"]
-#     comments_uri = issues_uri + "/comments"
-#     print(comments_uri)
-#     params = { "client_id": CLIENT_ID, "client_secret": CLIENT_SECRET, "state": "closed", 
-#                "per_page": 100}
-#     if label:
-#         assert isinstance(label, str)
-#         params['labels'] = label
-#     resp = requests.get(comments_uri, params = params)
-
-#     js_resp = resp.json()
-#     max_pages = get_max_pages_from_header(resp.headers)
-#     if max_pages is None: # No pages are returned by the Link header
-#         return [js_resp]
-#     responses = js_resp
-#     return responses
-#     assert isinstance(responses, list)
-#     for i in range(2, max_pages+1):
-#         params["page"] = i
-#         resp = requests.get(comments_uri, params = params)
-#         js_resp = resp.json()
-#         responses.extend(js_resp)
-#     return responses
-
 def get_comments():
     CLOSED_ISSUES_DIR = Path('data/closed_issues/')
     CLOSED_ISSUES_DIR.mkdir(parents=True, exist_ok=True)
@@ -98,26 +73,6 @@ def get_max_pages_from_header(header):
 
 def clean_issue_label_name(label):
     return label.replace(":", "_").replace("/", "_")
-
-def main():    
-    CLOSED_ISSUES_DIR.mkdir(parents=True, exist_ok=True)
-    for i, row in framework_df.iterrows():
-        framw_name = row['framework']
-        label_names = framework_label_mapping.get(framw_name, [None])
-        print("label_names", label_names)
-        for label in label_names:
-            issues_for_label = get_comments(row, label=label)
-            
-            if label:
-                safe_label_name = clean_issue_label_name(label)
-                label_names = framework_label_mapping.get(framw_name, [None])
-                filename = "{}_issues_comments_{}.json".format(row['framework'], safe_label_name) 
-            else:
-                filename = '{}_issues_comments.json'.format(row['framework'])
-            
-            with open(CLOSED_ISSUES_DIR / filename, 'w') as f:
-                json.dump(issues_for_label, f)
-        
 
 def write_closed_issues_to_csv(json_issues_path=BASE_ISSUES_DIR):
     CLOSED_ISSUES_DIR = Path('data/closed_issues/')
