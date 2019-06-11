@@ -43,22 +43,25 @@ def get_comments():
             assert isinstance(all_issue_comments, list)
             # for each segmentation page
             for i in range(2, max_pages+1):
-                params["page"] = i
-                sleep(5)
-                resp = all_issue_comments.get(comments_uri, params = params)
-                js_resp = resp.json()
-                all_issue_comments.extend(js_resp)
+                while True:
+                    try:
+                        params["page"] = i
+                        resp = all_issue_comments.get(comments_uri, params = params)
+                        js_resp = resp.json()
+                        all_issue_comments.extend(js_resp)
+                    except SomeSpecificException:
+                        continue
+                    break
             
             # 4) write issue number and comments in a dict
             #    that is unique to each framework
             framework_comments[issue.number] = all_issue_comments
-            
-            # 5) write dict in a json
-            with open(CLOSED_ISSUES_COMMENTS_DIR / '{}_comments.json'.format(csv.stem), 'a') as f:
-                json.dump(framework_comments, f)
                 
-            print(framework_comments['issue'])
+            print(framework_comments[i])
         
+        # 5) write dict in a json
+        with open(CLOSED_ISSUES_COMMENTS_DIR / '{}_comments.json'.format(csv.stem), 'w') as f:
+            json.dump(framework_comments, f)
     
 def get_max_pages_from_header(header):
     from urllib.parse import urlparse, parse_qs
