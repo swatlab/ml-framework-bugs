@@ -49,7 +49,8 @@ def get_comments():
                         resp = all_issue_comments.get(comments_uri, params = params)
                         js_resp = resp.json()
                         all_issue_comments.extend(js_resp)
-                    except SomeSpecificException:
+                    except (ConnectionError, requests.exceptions.ChunkedEncodingError):
+                        sleep(10)
                         continue
                     break
             
