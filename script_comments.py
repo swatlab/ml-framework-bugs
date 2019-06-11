@@ -1,7 +1,8 @@
-import os
 import json
+import os
 import pandas as pd
 from pathlib import Path
+from time import sleep
 
 import requests
 from dotenv import load_dotenv
@@ -37,44 +38,51 @@ BASE_ISSUES_DIR = Path("data/issues/")
 def get_comments():
     CLOSED_ISSUES_DIR = Path('data/closed_issues/')
     CLOSED_ISSUES_DIR.mkdir(parents=True, exist_ok=True)
-    closed_issues_path = CLOSED_ISSUES_DIR
+    CLOSED_ISSUES_COMMENTS_DIR = Path('data/closed_issues/comments/')
+    CLOSED_ISSUES_COMMENTS_DIR.mkdir(parents=True, exist_ok=True)
 
-    for csv in Path.glob(closed_issues_path, pattern='*.csv'):
+    # for each framework csv in directory
+    for csv in Path.glob(CLOSED_ISSUES_DIR, pattern='*.csv'):
         closed_issues = pd.read_csv(csv)
+        framework_comments = {}
         
+        # for each issue in csv
         for i, issue in closed_issues.iterrows():
-            framework_comments = {}
-            #CHANGE THIS URL, IT WAS FOR INTEGRATION PURPOSE ONLY
-            comments_uri = "https://api.github.com/repos/deepmind/sonnet/issues/132/comments"#issue["comments_url"] # issues_uri + issue['number'] + "/comments"
+            # 1) make a first request
+            comments_uri = issue["comments_url"] # issues_uri + issue['number'] + "/comments"
             params = { "client_id": CLIENT_ID, "client_secret": CLIENT_SECRET, 
                        "per_page": 100}
             
             resp = requests.get(comments_uri, params = params)
-        
             js_resp = resp.json()
+            
+            # 2) calculate number of segmentation pages
             max_pages = get_max_pages_from_header(resp.headers)
             
             if max_pages is None: # No pages are returned by the Link header
                 max_pages = 0
-                # print("j'exit")
-                # return [js_resp]
             
-            responses = js_resp
+            # 3) get all issues comments (comments that are on segm pages)
+            all_issue_comments = js_resp
             
-            assert isinstance(responses, list)
+            assert isinstance(all_issue_comments, list)
+            # for each segmentation page
             for i in range(2, max_pages+1):
                 params["page"] = i
-                resp = requests.get(comments_uri, params = params)
+                sleep(5)
+                resp = all_issue_comments.get(comments_uri, params = params)
                 js_resp = resp.json()
-                responses.extend(js_resp)
+                all_issue_comments.extend(js_resp)
             
-            all_issue_comments = responses #all_comments = get_all_comments_for_issue(issue)
-            
+            # 4) write issue number and comments in a dict
+            #    that is unique to each framework
             framework_comments[issue.number] = all_issue_comments
             
-            with open(CLOSED_ISSUES_DIR / '{}.json'.format(csv.stem), 'w') as f:
+            # 5) write dict in a json
+            with open(CLOSED_ISSUES_COMMENTS_DIR / '{}_comments.json'.format(csv.stem), 'a') as f:
                 json.dump(framework_comments, f)
-            break
+                
+            print(framework_comments['issue'])
         
     
 def get_max_pages_from_header(header):
