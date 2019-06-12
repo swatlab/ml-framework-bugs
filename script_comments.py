@@ -1,22 +1,23 @@
+import csv
 import json
 import os
 import pandas as pd
 from pathlib import Path
 from time import sleep
+import datetime
 
 import requests
 from dotenv import load_dotenv
 
 request_uri = {}
-CLOSED_ISSUES_COMMENTS_JSON_DIR = Path("data/closed_issues/comments/json")
 
 def get_comments():
     CLOSED_ISSUES_DIR = Path('data/closed_issues/')
     CLOSED_ISSUES_DIR.mkdir(parents=True, exist_ok=True)
-    CLOSED_ISSUES_COMMENTS_CSV_DIR = Path('data/closed_issues/comments/')
-    CLOSED_ISSUES_COMMENTS_CSV_DIR.mkdir(parents=True, exist_ok=True)
+    CLOSED_ISSUES_COMMENTS_JSON_DIR = Path('data/closed_issues/comments/json/')
+    CLOSED_ISSUES_COMMENTS_JSON_DIR.mkdir(parents=True, exist_ok=True)
 
-    # for each framework csv in directory
+    # for each framework_csv in directory
     for csv in Path.glob(CLOSED_ISSUES_DIR, pattern='*.csv'):
         print(csv.stem)
         closed_issues = pd.read_csv(csv)
@@ -32,9 +33,14 @@ def get_comments():
                 try:
                     resp = requests.get(comments_uri, params = params)
                     js_resp = resp.json()
+                    print("Get page 1 ", csv.stem, " at ", datetime.datetime.now())
                 except (ConnectionError, requests.exceptions.ChunkedEncodingError):
-                    print("internet connection lost, retrying in 10s")
+                    print("internet connection lost, retrying in 10s.")
                     sleep(10)
+                    continue
+                except (requests.exceptions.SSLError):
+                    print("SSL Max entries exceeded, retrying in 100s.")
+                    sleep(100)
                     continue
                 break
             
@@ -60,8 +66,12 @@ def get_comments():
                         js_resp = resp.json()
                         all_issue_comments.extend(js_resp)
                     except (ConnectionError, requests.exceptions.ChunkedEncodingError):
-                        print("internet connection lost")
+                        print("internet connection lost, retrying in 10s.")
                         sleep(10)
+                        continue
+                    except (requests.exceptions.SSLError):
+                        print("SSL Max entries exceeded, retrying in 100s.")
+                        sleep(100)
                         continue
                     break
             
@@ -70,7 +80,7 @@ def get_comments():
             framework_comments[issue.number] = all_issue_comments
         
         # 5) write dict in a json
-        with open(CLOSED_ISSUES_COMMENTS_CSV_DIR / '{}_comments.json'.format(csv.stem), 'w') as f:
+        with open(CLOSED_ISSUES_COMMENTS_JSON_DIR / '{}_comments.json'.format(csv.stem), 'w') as f:
             json.dump(framework_comments, f)
     
 def get_max_pages_from_header(header):
@@ -84,28 +94,34 @@ def get_max_pages_from_header(header):
     last_page_number = int(parse_qs(urlparse(last_page_uri).query)["page"][0])
     return last_page_number
 
-# param : the dir which contains the json
-def write_closed_issues_to_csv(json_issues_path=CLOSED_ISSUES_COMMENTS_JSON_DIR):
-    CLOSED_ISSUES_COMMENTS_CSV_DIR = Path('data/closed_issues/')
+def write_closed_issues_comments_to_csv(json_issues_path=CLOSED_ISSUES_COMMENTS_JSON_DIR):
+    CLOSED_ISSUES_COMMENTS_CSV_DIR = Path('data/closed_issues/comments/csv/')
     CLOSED_ISSUES_COMMENTS_CSV_DIR.mkdir(parents=True, exist_ok=True)
 
     for jf in Path.glob(json_issues_path, pattern='*.json'):
         with open(jf, 'r') as f:
             json_obj = json.load(f)
-        if isinstance(json_obj[0], list):
+            
+        if isinstance(json_obj, dict):
+            _df = pd.DataFrame.from_dict(json_obj, orient='index')
+            _df.transpose()
+            _df.to_csv(CLOSED_ISSUES_COMMENTS_CSV_DIR / '{}.csv'.format(jf.stem), index=False)
+        elif isinstance(json_obj[0], list):
             # If extraction was a list of list (backwards compatibility)
             flattened = [x for i in json_obj for x in i]
+            flattened_json_string = json.dumps(flattened) # Dump to string for pandas to read (only accepts str or paths)
+            _df = pd.read_json(flattened_json_string)
+            _df.to_csv(CLOSED_ISSUES_COMMENTS_CSV_DIR / '{}.csv'.format(jf.stem), index=False)
         else:
             flattened = json_obj
-        flattened_json_string = json.dumps(flattened) # Dump to string for pandas to read (only accepts str or paths)
-
-        _df = pd.read_json(flattened_json_string)
-        _df = _df[_df['state']=='closed']
-        _df.to_csv(CLOSED_ISSUES_COMMENTS_CSV_DIR / '{}.csv'.format(jf.stem), index=False)
+            flattened_json_string = json.dumps(flattened) # Dump to string for pandas to read (only accepts str or paths)
+            _df = pd.read_json(flattened_json_string)
+            _df.to_csv(CLOSED_ISSUES_COMMENTS_CSV_DIR / '{}.csv'.format(jf.stem), index=False)
+        
 
 if __name__ == "__main__":
     load_dotenv()
     CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
     CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
-    get_comments()
-    write_closed_issues_to_csv()
+    #get_comments()
+    write_closed_issues_comments_to_csv()

@@ -2,6 +2,7 @@ import os
 import json
 import pandas as pd
 from pathlib import Path
+from time import sleep
 import datetime
 
 import requests
