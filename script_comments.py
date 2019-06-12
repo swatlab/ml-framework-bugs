@@ -8,13 +8,13 @@ import requests
 from dotenv import load_dotenv
 
 request_uri = {}
-BASE_ISSUES_DIR = Path("data/issues/")
+CLOSED_ISSUES_COMMENTS_JSON_DIR = Path("data/closed_issues/comments/json")
 
 def get_comments():
     CLOSED_ISSUES_DIR = Path('data/closed_issues/')
     CLOSED_ISSUES_DIR.mkdir(parents=True, exist_ok=True)
-    CLOSED_ISSUES_COMMENTS_DIR = Path('data/closed_issues/comments/')
-    CLOSED_ISSUES_COMMENTS_DIR.mkdir(parents=True, exist_ok=True)
+    CLOSED_ISSUES_COMMENTS_CSV_DIR = Path('data/closed_issues/comments/')
+    CLOSED_ISSUES_COMMENTS_CSV_DIR.mkdir(parents=True, exist_ok=True)
 
     # for each framework csv in directory
     for csv in Path.glob(CLOSED_ISSUES_DIR, pattern='*.csv'):
@@ -61,7 +61,7 @@ def get_comments():
             print(framework_comments[i])
         
         # 5) write dict in a json
-        with open(CLOSED_ISSUES_COMMENTS_DIR / '{}_comments.json'.format(csv.stem), 'w') as f:
+        with open(CLOSED_ISSUES_COMMENTS_CSV_DIR / '{}_comments.json'.format(csv.stem), 'w') as f:
             json.dump(framework_comments, f)
     
 def get_max_pages_from_header(header):
@@ -75,12 +75,10 @@ def get_max_pages_from_header(header):
     last_page_number = int(parse_qs(urlparse(last_page_uri).query)["page"][0])
     return last_page_number
 
-def clean_issue_label_name(label):
-    return label.replace(":", "_").replace("/", "_")
-
-def write_closed_issues_to_csv(json_issues_path=BASE_ISSUES_DIR):
-    CLOSED_ISSUES_DIR = Path('data/closed_issues/')
-    CLOSED_ISSUES_DIR.mkdir(parents=True, exist_ok=True)
+# param : the dir which contains the json
+def write_closed_issues_to_csv(json_issues_path=COMMENTS_JSON_DIR):
+    CLOSED_ISSUES_COMMENTS_CSV_DIR = Path('data/closed_issues/')
+    CLOSED_ISSUES_COMMENTS_CSV_DIR.mkdir(parents=True, exist_ok=True)
 
     for jf in Path.glob(json_issues_path, pattern='*.json'):
         with open(jf, 'r') as f:
@@ -94,11 +92,11 @@ def write_closed_issues_to_csv(json_issues_path=BASE_ISSUES_DIR):
 
         _df = pd.read_json(flattened_json_string)
         _df = _df[_df['state']=='closed']
-        _df.to_csv(CLOSED_ISSUES_DIR / '{}.csv'.format(jf.stem), index=False)
+        _df.to_csv(CLOSED_ISSUES_COMMENTS_CSV_DIR / '{}.csv'.format(jf.stem), index=False)
 
 if __name__ == "__main__":
     load_dotenv()
     CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
     CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
     get_comments()
-    # write_closed_issues_to_csv()
+    write_closed_issues_to_csv()
