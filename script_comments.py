@@ -28,15 +28,15 @@ def get_comments():
             comments_uri = issue["comments_url"] # issues_uri + issue['number'] + "/comments"
             params = { "client_id": CLIENT_ID, "client_secret": CLIENT_SECRET, 
                        "per_page": 100}
-            
-            try:
-                resp = requests.get(comments_uri, params = params)
-                js_resp = resp.json()
-            except (ConnectionError, requests.exceptions.ChunkedEncodingError):
-                print("internet connection lost, retrying in 10s")
-                sleep(10)
-                continue
-            break
+            while True:
+                try:
+                    resp = requests.get(comments_uri, params = params)
+                    js_resp = resp.json()
+                except (ConnectionError, requests.exceptions.ChunkedEncodingError):
+                    print("internet connection lost, retrying in 10s")
+                    sleep(10)
+                    continue
+                break
             
             # 2) calculate number of segmentation pages
             max_pages = get_max_pages_from_header(resp.headers)
