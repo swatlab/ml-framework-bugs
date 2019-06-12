@@ -18,6 +18,7 @@ def get_comments():
 
     # for each framework csv in directory
     for csv in Path.glob(CLOSED_ISSUES_DIR, pattern='*.csv'):
+        print(csv.stem)
         closed_issues = pd.read_csv(csv)
         framework_comments = {}
         
@@ -28,8 +29,14 @@ def get_comments():
             params = { "client_id": CLIENT_ID, "client_secret": CLIENT_SECRET, 
                        "per_page": 100}
             
-            resp = requests.get(comments_uri, params = params)
-            js_resp = resp.json()
+            try:
+                resp = requests.get(comments_uri, params = params)
+                js_resp = resp.json()
+            except (ConnectionError, requests.exceptions.ChunkedEncodingError):
+                print("internet connection lost, retrying in 10s")
+                sleep(10)
+                continue
+            break
             
             # 2) calculate number of segmentation pages
             max_pages = get_max_pages_from_header(resp.headers)
@@ -37,19 +44,23 @@ def get_comments():
             if max_pages is None: # No pages are returned by the Link header
                 max_pages = 0
             
+            print("max pages : ", max_pages+1)
+            
             # 3) get all issues comments (comments that are on segm pages)
             all_issue_comments = js_resp
             
             assert isinstance(all_issue_comments, list)
             # for each segmentation page
             for i in range(2, max_pages+1):
+                params["page"] = i
                 while True:
                     try:
-                        params["page"] = i
                         resp = all_issue_comments.get(comments_uri, params = params)
+                        print("Get page ", i,framw_row['framework'], " at ", datetime.datetime.now())
                         js_resp = resp.json()
                         all_issue_comments.extend(js_resp)
                     except (ConnectionError, requests.exceptions.ChunkedEncodingError):
+                        print("internet connection lost")
                         sleep(10)
                         continue
                     break
@@ -57,8 +68,6 @@ def get_comments():
             # 4) write issue number and comments in a dict
             #    that is unique to each framework
             framework_comments[issue.number] = all_issue_comments
-                
-            print(framework_comments[i])
         
         # 5) write dict in a json
         with open(CLOSED_ISSUES_COMMENTS_CSV_DIR / '{}_comments.json'.format(csv.stem), 'w') as f:
@@ -76,7 +85,7 @@ def get_max_pages_from_header(header):
     return last_page_number
 
 # param : the dir which contains the json
-def write_closed_issues_to_csv(json_issues_path=COMMENTS_JSON_DIR):
+def write_closed_issues_to_csv(json_issues_path=CLOSED_ISSUES_COMMENTS_JSON_DIR):
     CLOSED_ISSUES_COMMENTS_CSV_DIR = Path('data/closed_issues/')
     CLOSED_ISSUES_COMMENTS_CSV_DIR.mkdir(parents=True, exist_ok=True)
 
