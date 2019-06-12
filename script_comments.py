@@ -142,16 +142,22 @@ def _make_base_params():
     if ARGS.use_pat:
         return {"per_page": 100}
     else:
-        CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
-        CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
+        CLIENT_ID = os.getenv("GITHUB_CLIENT_ID", "")
+        CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET", "")
+        if CLIENT_ID == "" or CLIENT_SECRET == "":
+            print("CLIENT_ID or CLIENT_SECRET is not defined in the environment variables while using OAuth configuration. Exiting...")
+            exit(1)
         return {"client_id": CLIENT_ID, "client_secret": CLIENT_SECRET,
                 "per_page": 100}
 
 
 def _make_auth_params():
     if ARGS.use_pat:
-        CLIENT_USER = os.getenv('GITHUB_PERSONAL_ACCESS_USER')
-        CLIENT_PAT = os.getenv('GITHUB_PERSONAL_ACCESS_TOKEN')
+        CLIENT_USER = os.getenv('GITHUB_PERSONAL_ACCESS_USER', "")
+        CLIENT_PAT = os.getenv('GITHUB_PERSONAL_ACCESS_TOKEN', "")
+        if CLIENT_USER == "" or CLIENT_PAT == "":
+            print("CLIENT_USER or CLIENT_PAT is not defined in the environment variables while using PAT configuration. Exiting...")
+            exit(1)
         return (CLIENT_USER, CLIENT_PAT)
     else:
         return None
@@ -160,7 +166,6 @@ def _make_auth_params():
 if __name__ == "__main__":
     load_dotenv()
     ARGS = PARSER.parse_args()
-    print(ARGS)
     REQUEST_BASE_PARAMS = _make_base_params()
     REQUEST_AUTH_HEADER = _make_auth_params()
 
