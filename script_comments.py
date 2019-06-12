@@ -33,7 +33,7 @@ def get_comments():
                 try:
                     resp = requests.get(comments_uri, params = params)
                     js_resp = resp.json()
-                    print("Get page 1 ", csv.stem, " at ", datetime.datetime.now())
+                    print("Get page 1, issue ", issue.number, csv.stem, " at ", datetime.datetime.now())
                 except (ConnectionError, requests.exceptions.ChunkedEncodingError):
                     print("internet connection lost, retrying in 10s.")
                     sleep(10)
@@ -62,7 +62,7 @@ def get_comments():
                 while True:
                     try:
                         resp = all_issue_comments.get(comments_uri, params = params)
-                        print("Get page ", i,framw_row['framework'], " at ", datetime.datetime.now())
+                        print("Get page ", i, issue.number,framw_row['framework'], " at ", datetime.datetime.now())
                         js_resp = resp.json()
                         all_issue_comments.extend(js_resp)
                     except (ConnectionError, requests.exceptions.ChunkedEncodingError):
@@ -123,5 +123,5 @@ if __name__ == "__main__":
     load_dotenv()
     CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
     CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
-    #get_comments()
+    get_comments()
     write_closed_issues_comments_to_csv()
