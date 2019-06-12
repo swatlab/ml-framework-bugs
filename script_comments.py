@@ -9,12 +9,20 @@ import datetime
 import requests
 from dotenv import load_dotenv
 
+import argparse
+
+PARSER = argparse.ArgumentParser()
+PARSER.add_argument('--use-pat','--use-personal-access-token', 
+                    action='store_true',
+                    help='Use a personal access token instead of client id and secret', )
+
 request_uri = {}
 
-def get_comments():
+CLOSED_ISSUES_COMMENTS_JSON_DIR = Path('data/closed_issues/comments/json/')
+
+def get_comments(base_request_params, request_auth):
     CLOSED_ISSUES_DIR = Path('data/closed_issues/')
     CLOSED_ISSUES_DIR.mkdir(parents=True, exist_ok=True)
-    CLOSED_ISSUES_COMMENTS_JSON_DIR = Path('data/closed_issues/comments/json/')
     CLOSED_ISSUES_COMMENTS_JSON_DIR.mkdir(parents=True, exist_ok=True)
 
     # for each framework_csv in directory
@@ -27,11 +35,10 @@ def get_comments():
         for i, issue in closed_issues.iterrows():
             # 1) make a first request
             comments_uri = issue["comments_url"] # issues_uri + issue['number'] + "/comments"
-            params = { "client_id": CLIENT_ID, "client_secret": CLIENT_SECRET, 
-                       "per_page": 100}
+            params = base_request_params
             while True:
                 try:
-                    resp = requests.get(comments_uri, params = params)
+                    resp = requests.get(comments_uri, params = params, auth=request_auth)
                     js_resp = resp.json()
                     print("Get page 1, issue ", issue.number, csv.stem, " at ", datetime.datetime.now())
                 except (ConnectionError, requests.exceptions.ChunkedEncodingError):
@@ -117,11 +124,29 @@ def write_closed_issues_comments_to_csv(json_issues_path=CLOSED_ISSUES_COMMENTS_
             flattened_json_string = json.dumps(flattened) # Dump to string for pandas to read (only accepts str or paths)
             _df = pd.read_json(flattened_json_string)
             _df.to_csv(CLOSED_ISSUES_COMMENTS_CSV_DIR / '{}.csv'.format(jf.stem), index=False)
-        
+
+def _make_base_params():
+    if ARGS.use_pat:
+        return {"per_page": 100}
+    else:
+        CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
+        CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
+        return { "client_id": CLIENT_ID, "client_secret": CLIENT_SECRET, 
+                "per_page": 100}
+def _make_auth_params():
+    if ARGS.use_pat:
+        CLIENT_USER = os.getenv('GITHUB_PERSONAL_ACCESS_USER')
+        CLIENT_PAT = os.getenv('GITHUB_PERSONAL_ACCESS_TOKEN')
+        return (CLIENT_USER, CLIENT_PAT)
+    else:
+        return None
 
 if __name__ == "__main__":
     load_dotenv()
-    CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
-    CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
-    get_comments()
+    ARGS = PARSER.parse_args()
+    print(ARGS)
+    REQUEST_BASE_PARAMS = _make_base_params()
+    REQUEST_AUTH_HEADER = _make_auth_params()
+
+    get_comments(base_request_params=REQUEST_BASE_PARAMS, request_auth=REQUEST_AUTH_HEADER)
     write_closed_issues_comments_to_csv()
