@@ -31,7 +31,6 @@ class PyTorchRepo(RepoConfiguration):
             tags_output = subprocess.run("git for-each-ref --sort=taggerdate --format='%(refname:short)' refs/tags", cwd=self.local_path, stdout=subprocess.PIPE, shell=True, stderr=None, check=False)
             tags_decoded = tags_output.stdout.decode('utf8')
             self._tag_cache = tags_decoded.split('\n')
-            print(tags_decoded)
         tag_index = self._tag_cache.index(tag)
         if tag_index == 0:
             raise Exception('There is no tag prior to the first tag ({})'.format(tag))
