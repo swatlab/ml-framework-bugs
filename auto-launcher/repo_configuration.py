@@ -46,10 +46,6 @@ class RepoConfiguration(abc.ABC):
     def latest_release_tag_for_commit(self, issue):
         pass
 
-    @abc.abstractclassmethod
-    def generate_docker_content(self, issue, strategy, eval_type):
-        pass
-
     @property
     def local_path(self):
         return self._local_repo_path

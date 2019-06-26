@@ -37,51 +37,6 @@ class PyTorchRepo(RepoConfiguration):
         prior_tag = self._tag_cache[tag_index - 1]
         return prior_tag
 
-    def generate_docker_content(self, issue, strategy, eval_type):
-        # TODO: Correctly use AutoML type
-        fix_commit, parent_commit = self.commits_for_issue(issue)
-        # TODO: Correctly infer CUDA version or CPU only
-        CUDA_VERSION = 9.0 # Put None to disable
-        if strategy == StrategyType.BUILD_BETWEEN:
-            # Only the 'fixed' version needs to be on the commit of the fix
-            version_to_checkout = fix_commit if eval_type == EvaluationType.FIXED else parent_commit
-            with open(self.dockerfile_path, 'rt') as input_file:
-                fc = input_file.read()
-            content = fc.replace('COMMIT_PLACEHOLDER', commit)
-            return content
-        elif strategy == StrategyType.RELEASE_BETWEEN:
-            latest_release_tag = self.latest_release_tag_for_commit(fix_commit)
-            prior_release_tag = self.tag_prior_to_tag(latest_release_tag)
-            tag_to_position = latest_release_tag if eval_type == EvaluationType.FIXED else prior_release_tag
-            conda_cuda_version = '{0:0>2d}'.format(int(CUDA_VERSION*10))
-            repl_dict = {
-                # TODO: Smart formatting
-                'conda_install_command': 'conda install pytorch={} {} -c pytorch'.format(tag_to_position.lstrip('v'), ''),
-                'base_image': 'nvidia/cuda:{}-cudnn7-devel-ubuntu16.04'.format(CUDA_VERSION) if CUDA_VERSION else 'TODO'
-            }
-            content = """\
-FROM {base_image}
-ARG PYTHON_VERSION=3.6
-RUN apt-get update && apt-get install -y --no-install-recommends \\
-         build-essential \\
-         cmake \\
-         git \\
-         curl \\
-         ca-certificates \\
-         libjpeg-dev \\
-         libpng-dev
-RUN curl -o ~/miniconda.sh -O  https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh  && \\
-     chmod +x ~/miniconda.sh && \\
-     ~/miniconda.sh -b -p /opt/conda && \\
-     rm ~/miniconda.sh && \\
-     /opt/conda/bin/conda install -y python=$PYTHON_VERSION numpy pyyaml scipy ipython mkl mkl-include ninja cython typing && \\
-     /opt/conda/bin/conda clean -ya
-ENV PATH /opt/conda/bin:$PATH
-
-RUN {conda_install_command}
-""".format_map(repl_dict)
-            return content
-            # TODO: Correctly put information in Dockerfile
 
 # TODO: Make config file available to read these values
 PyTorchRepo_instance = PyTorchRepo(name='PyTorch',
