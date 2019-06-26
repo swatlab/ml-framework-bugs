@@ -86,7 +86,7 @@ RUN {conda_install_command}
 
 # TODO: Make config file available to read these values
 PyTorchRepo_instance = PyTorchRepo(name='PyTorch',
-                                    dockerfile_path='Dockerfile_PyTorch',
+                                    dockerfile_path='configs/PyTorch/Dockerfile_PyTorch',
                                     local_repo_path='/home/emilio/Repos/frameworks/pytorch/')
 
 FRAMEWORK_MAPPING: RepoMapping = {
