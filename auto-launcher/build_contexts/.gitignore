@@ -1,0 +1,2 @@
+# Don't track build contexts tarballs
+*.tar.gz
