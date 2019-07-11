@@ -30,6 +30,27 @@ def config_for_issue(framework: RepoConfiguration, issue):
         with open(new_file_path, 'w') as of:
             of.write(content)
 
+# TODO: Better architecture
+def docker_build_instructions_for_issue(framework: RepoConfiguration, issue):
+    cuda_version = 9.0
+    if isinstance(framework, PyTorchRepo):
+        print('--- Issue:', issue)
+        fix_commit, parent_commit = framework.commits_for_issue(issue)
+        cuda_str_version = 100  # TODO
+        container_name = 'f{}_i{}'.format(framework.name, issue)
+        base_docker_image = 'emiliorivera/ml-frameworks:pytorch{}builder'.format(cuda_str_version)  # TODO
+        # TODO: Add commands needed to build when container is launched
+        # Something like "echo -e \'{buggy_commit}\\n{fix_commit}\' >> /opt/pytorch/commits.txt && conda activate build && ./installer.sh"
+        print('docker run --rm --mount source=build-vol,target=/builds --runtime=nvidia -e NVIDIA_DEVICES=all -e NVIDIA_REQUIRE_CUDA="cuda>={CUDA_VERSION}" -e NVIDIA_DRIVER_CAPABILITIES="compute,utility" --name {container_name} -it {base_docker_image}'.format_map({
+            'CUDA_VERSION':  cuda_version,
+            'container_name': container_name,
+            'base_docker_image': base_docker_image,
+            'fix_commit': fix_commit,
+            'buggy_commit': parent_commit
+        }))
+    else:
+        raise NotImplementedError('Not implemented for {}'.format(type(framework)))
+
 
 def build_dockerfile_along_strategy(strategy: StrategyType, repo_instance: RepoConfiguration, issue, eval_type: EvaluationType):
     # TODO: Put a map for better dispatch?
@@ -69,11 +90,12 @@ class RepoDockerBuilder(object):
 
 
 class PyTorchDockerBuilder(RepoDockerBuilder):
-    def build_between(self, version_to_checkout):
+    def build_between(self, version_to_checkout, cuda_version):
         # Only the 'fixed' version needs to be on the commit of the fix
         with open(self.repo.dockerfile_path, 'rt') as input_file:
             fc = input_file.read()
-        content = fc.replace('COMMIT_PLACEHOLDER', version_to_checkout)
+        cuda_str = '{0:0>2d}'.format(int(cuda_version*10))
+        content = fc.replace_dict({'CUDA_VERSION': cuda_str, 'COMMIT': version_to_checkout})
         return content
 
     def release_between(self, tag_to_position, cuda_version):
@@ -109,4 +131,4 @@ RUN {conda_install_command}
 if __name__ == "__main__":
     # TODO: Put this as an option
     F = FRAMEWORK_MAPPING['pytorch']
-    config_for_issue(F, issue='10066')
+    docker_build_instructions_for_issue(F, issue='14878')
