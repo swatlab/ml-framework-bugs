@@ -60,7 +60,7 @@ The second argument is the build context.
 We want our container to have access to nvidia-devices so we run with the following options:
 1. `--runtime=nvidia` to have access to gpu
 1. `-e NVIDIA_DEVICES=all` sets an environment variable in the container that upon loading, nvidia picks up and tells the container nvidia-runtime to allow access on all devices
-1. `e NVIDIA_REQUIRE_CUDA="cuda>=9.0"` also sets an environment variable telling nvidia to use a version greater than what is requested. While one can specify a specific version (=), that one needs to be available on the host by some mechanism.
+1. `-e NVIDIA_REQUIRE_CUDA="cuda>=9.0"` also sets an environment variable telling nvidia to use a version greater than what is requested. While one can specify a specific version (=), that one needs to be available on the host by some mechanism.
 1. `-e NVIDIA_DRIVER_CAPABILITIES="compute,utility"` are the features to be enabled within the container. For our use, we only want access to CUDA compute capabilties
 1. `--mount source=build-vol,target=/builds` tells our container to mount on /builds (in its filesystem) volume created by docker with name `build-vol`. This is used to store completed builds (*.whl) in order to store them on the host machine (since the volume is actually a path existing on the host).
 1. `-it` launches an interactive session (`-i`) and a pseudo-tty (`t`)
