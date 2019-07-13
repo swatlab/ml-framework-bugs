@@ -1,0 +1,45 @@
+FROM nvidia/cuda:10.0-cudnn7-devel-ubuntu16.04
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        cmake \
+        git \
+        curl \
+        ca-certificates \
+        libjpeg-dev \
+        libpng-dev \
+        nano
+
+# Setup Python compilation needed tools
+RUN apt-get update && apt-get install -y --no-install-recommends make build-essential \
+        libssl-dev zlib1g-dev libbz2-dev libreadline-dev\
+        libsqlite3-dev wget curl llvm libncurses5-dev\
+        xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
+
+
+RUN curl -o ~/miniconda.sh -O  https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh  && \
+     chmod +x ~/miniconda.sh && \
+     ~/miniconda.sh -b -p /opt/conda && \
+     rm ~/miniconda.sh && \
+     /opt/conda/bin/conda clean -ya
+
+ENV DSTF=/root/.bashrc
+ENV PATH /opt/conda/bin:$PATH
+
+RUN /opt/conda/bin/conda install -y mkl mkl-include
+ENV MKL_PATH $(dirname $(find / -type f -name libmkl_intel_lp64.so -print -quit))
+RUN echo export LD_LIBRARY_PATH="${MKL_PATH}:\$LD_LIBRARY_PATH" >> $DSTF
+
+ENV PYENV_ROOT="/opt/.pyenv"
+# Setup pyenv for multiple python versions
+RUN curl -L https://raw.githubusercontent.com/EmilioRivera/pyenv-installer/master/bin/pyenv-installer | bash
+ENV PATH="${PYENV_ROOT}/bin:$PATH"
+# Add pyenv shims to path, use /etc/profile for shell-agnostic shim
+RUN echo export PATH="$PYENV_ROOT/bin:\$PATH" >> ${DSTF}
+RUN pyenv init - >> ${DSTF}
+RUN pyenv virtualenv-init - >> ${DSTF}
+ARG PY35VERSION=3.5.6
+ARG PY36VERSION=3.6.8
+# Setup needed python versions
+RUN pyenv install ${PY35VERSION}
+RUN pyenv install ${PY36VERSION}
