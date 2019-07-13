@@ -30,13 +30,20 @@ class RepoConfiguration(abc.ABC):
             assert p.exists()
             self._local_repo_path = p
 
-    def parent_commit(self, commit_sha, check_sha=False):
+    def parent_commit(self, commit_sha, check_sha=True):
         if check_sha:
-            # TODO: Verification that commit_sha exists
-            pass
-        log_proc = subprocess.run('git rev-parse {}^ --format="%h"'.format(commit_sha), cwd=self.local_path, stdout=subprocess.PIPE, shell=True, stderr=None, check=check_sha)
-        parent_split = log_proc.stdout.decode('utf8').split('\n')
-        return parent_split[0]
+            if commit_sha == '':
+                raise ValueError('commit_sha is empty   ')
+            exist_proc = subprocess.run('git branch --contains "{}" '.format(commit_sha), cwd=self.local_path, stdout=subprocess.PIPE, shell=True, stderr=None, check=True)
+        try:
+            log_proc = subprocess.run('git rev-parse --verify  {}^'.format(commit_sha), cwd=self.local_path, stdout=subprocess.PIPE, shell=True, stderr=None, check=True)
+            parent_split = log_proc.stdout.decode('utf8').split('\n')
+        except subprocess.CalledProcessError as e:
+            print('Error with calling parent_commit with input: BEGIN OF INPUT--', commit_sha, '-- END OF INPUT')
+            print(e)
+            raise
+        else:
+            return parent_split[0]
 
     @abc.abstractmethod
     def commits_for_issue(self, issue):
