@@ -7,11 +7,12 @@ RepoMapping = Dict[str, RepoConfiguration]
 
 class PyTorchRepo(RepoConfiguration):
     def _commit_fixing_issue(self, issue):
-        log_proc = subprocess.run('git log -i --grep="(#{})" --format="%h"'.format(issue), cwd=self.local_path, stdout=subprocess.PIPE, shell=True, stderr=None, check=False)
+        cmd_to_run = 'git log -i --grep="(#{})" --format="%h"'.format(issue)
+        log_proc = subprocess.run(cmd_to_run, cwd=self.local_path, stdout=subprocess.PIPE, shell=True, stderr=None, check=True)
         commits = log_proc.stdout.decode('utf8')
         split = commits.split('\n')
         if len(split) > 2:
-            raise Exception('More than two commits detected')
+            raise Exception('More than two commits detected', cmd_to_run, split)
         else:
             fix_commit = split[0]
         return fix_commit
