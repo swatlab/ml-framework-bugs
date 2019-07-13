@@ -39,7 +39,7 @@ for c in "${commits[@]}"; do
   fi
 
   git checkout $c
-  git submodule update --init --recursive
+  git submodule update --init
   CMAKE_PREFIX_PATH=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}
   # Disable MKLDNN since it weirdly breaks builds
   # python setup.py bdist_wheel
