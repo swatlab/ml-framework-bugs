@@ -28,11 +28,6 @@ def commandFilepaths(commit_command):
     filenames = result_filenames.stdout.decode("utf-8")
     return filenames
     
-def commandPatchfile(commit_command):
-    resuly_patchfile = subprocess.run(['git', 'diff', commit_command], stdout=subprocess.PIPE)
-    patchfile = result.stdout.decode("utf-8")
-    return patchfile
-
 """ 
 Ouvre les fichiers à tracer et obtenir leur contenu textuel
 Retourne une liste de string.
@@ -52,9 +47,21 @@ def splitFileContents(file_contents):
         file_contents_lines.append(file_content.splitlines)
     return file_contents_lines
 
-def findChangedLines(patchfile):
+def commandPatchfile(commit_command):
+    resuly_patchfile = subprocess.run(['git', 'diff', commit_command], stdout=subprocess.PIPE)
+    patchfile = result.stdout.decode("utf-8")
+    
+    split_patchfile = splitPatchfile(patchfile)
+    
+    return split_patchfile
+
+def splitPatchfile(patchfile):
+    split_patchfile = patchfile.split('diff --git')
+    return split_patchfile
+
+def findChangedLines(split_patch):
     regex = r"^@@ [-+](\d+)"
-    matches = re.finditer(regex, patchfile, re.MULTILINE)
+    matches = re.finditer(regex, split_patch, re.MULTILINE)
     line_numbers = []
     
     for matchNum, match in enumerate(matches, start=1):
@@ -62,21 +69,39 @@ def findChangedLines(patchfile):
         line_numbers.append(int(match.group(1)))
     return line_numbers
 
+def findChangedLinesPerFile(split_patchfile):
+    lines_numbers = []
+    for split_patch in split_patchfile:
+        lines_numbers.append(findChangedLines(split_patch))
+    return lines_numbers
+
 if __name__ == '__main__':
     commit_command = getVersionArguments()
     filenames = commandFilepaths(commit_command)
     filepaths = filenames.splitlines()
-    patchfile = commandPatchfile(commit_command)
+    split_patchfile = commandPatchfile(commit_command) # 
 
     # fichiers à tracer
-    file_contents = getFileContents(filepaths)
-    file_contents_lines = splitFileContents(file_contents)
+    file_contents = getFileContents(filepaths) # est une liste de strings
+    file_contents_lines = splitFileContents(file_contents) # est une liste de lignes de string
+    
+    # les éléments de première dimension de file_contents_lines doivent correspondre avec ceux
+    # de split_patchfile.
     
     # patch
+    lines_numbers = findChangedLinesPerFile(split_patchfile)
+    trace_call_Cpp = "SOURCE_CODE_TRACER.trace('patched function called');" # WILL CHANGE DEPENDING OF LANGUAGE AND THE METHOD CALLED
     
-    line_numbers = findChangedLines(patchfile)
-    # WILL CHANGE DEPENDING OF LANGUAGE AND THE METHOD CALLED
-    file_patch_lines_number = "SOURCE_CODE_TRACER.trace('patched function called');"
+    # remove empty elements
+    split_patchfile = list(filter(None, split_patchfile))
+    file_contents_lines = list(filter(None, file_contents_lines))
+    lines_numbers = list(filter(None, lines_numbers))
+    print(len(split_patchfile))
+    print(len(file_contents_lines))
+    print(lines_numbers)
+    
+    #traced_file_contents_lines = = copy.deepcopy(file_contents_lines)
+    
     
     # concatener lignes avec l'original
     # file_modified_content_lines = copy.deepcopy(file_content_lines)
@@ -91,9 +116,6 @@ if __name__ == '__main__':
     # new_file.write(file_modified_content)
     # print(new_file_path, " is written.")
     # new_file.close()
-
-    
-# rajouter lignes d'un file dans un autre file (à l'aide de diff)
 
 # add trace.trace()
 # file_patch_content_lines = file_patch_content.splitlines()
