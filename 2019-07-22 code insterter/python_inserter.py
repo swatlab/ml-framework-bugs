@@ -48,6 +48,7 @@ def splitFileContents(file_contents):
     return file_contents_lines
 
 def commandPatchfile(commit_command):
+    # TODO verifier que les paths
     resuly_patchfile = subprocess.run(['git', 'diff', commit_command], stdout=subprocess.PIPE)
     patchfile = result.stdout.decode("utf-8")
     
@@ -133,4 +134,6 @@ if __name__ == '__main__':
 
 # TODO portability
 # numero de commit
-# chemins fichiers à inserer, patch, 
+    
+# TODO
+# update question sur stackO
