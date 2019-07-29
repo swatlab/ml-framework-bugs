@@ -44,7 +44,7 @@ def getFileContents(filepaths):
 def splitFileContents(file_contents):
     file_contents_lines = []
     for file_content in file_contents:
-        file_contents_lines.append(file_content.splitlines)
+        file_contents_lines.append(file_content.splitlines())
     return file_contents_lines
 
 def commandPatchfile(commit_command):
@@ -75,15 +75,31 @@ def findChangedLinesPerFile(split_patchfile):
         lines_numbers.append(findChangedLines(split_patch))
     return lines_numbers
 
+def writeTracedFile(traced_file_contents_lines):
+    # TODO
+    # portability of new file name
+    i = 1
+    for traced_file_content_line in traced_file_contents_lines:
+        traced_file_content = ("\n".join(traced_file_content_line))
+        print(i)
+        
+        # concatenation dans un nouveau fichier
+        new_file_path = "new_file"+str(i)+".py"
+        new_file = open(new_file_path, "w")
+        new_file.write(traced_file_content)
+        print(new_file_path, " is written.")
+        new_file.close()
+        i += 1
+
 if __name__ == '__main__':
     commit_command = getVersionArguments()
     filenames = commandFilepaths(commit_command)
     filepaths = filenames.splitlines()
-    split_patchfile = commandPatchfile(commit_command) # 
+    split_patchfile = commandPatchfile(commit_command) # est une liste de strings (après split diff --git)
 
     # fichiers à tracer
-    file_contents = getFileContents(filepaths) # est une liste de strings
-    file_contents_lines = splitFileContents(file_contents) # est une liste de lignes de string
+    file_contents = getFileContents(filepaths) # est une liste de strings (après read fichier)
+    file_contents_lines = splitFileContents(file_contents) # est une liste de lignes de string (après splitlines)
     
     # les éléments de première dimension de file_contents_lines doivent correspondre avec ceux
     # de split_patchfile.
@@ -96,38 +112,22 @@ if __name__ == '__main__':
     split_patchfile = list(filter(None, split_patchfile))
     file_contents_lines = list(filter(None, file_contents_lines))
     lines_numbers = list(filter(None, lines_numbers))
-    print(len(split_patchfile))
-    print(len(file_contents_lines))
-    print(lines_numbers)
     
-    #traced_file_contents_lines = = copy.deepcopy(file_contents_lines)
+    traced_file_contents_lines = copy.deepcopy(file_contents_lines)
+    for traced_file_content_line, line_number in zip(traced_file_contents_lines, lines_numbers):
+        # ajout de trace_call sur liste inversée pour conserver le numéro de ligne
+        [traced_file_content_line.insert(n, trace_call_Cpp) for n in line_number[::-1]]
     
+    # # test if insertion is success
+    # print(lines_numbers)
+    # indicesa = [i for i, x in enumerate(traced_file_contents_lines[0]) if x == trace_call_Cpp]
+    # indicesb = [i for i, x in enumerate(traced_file_contents_lines[1]) if x == trace_call_Cpp]
+    # print(indicesa, indicesb)
     
-    # concatener lignes avec l'original
-    # file_modified_content_lines = copy.deepcopy(file_content_lines)
-    # for line_n in line_numbers:
-    #     file_modified_content_lines.insert(line_n, file_patch_content_lines)
+    writeTracedFile(traced_file_contents_lines)
     
-    # file_modified_content = ("\n".join(file_modified_content_lines))
-    
-    # # concatenation dans un nouveau fichier
-    # new_file_path = "new_file.py"
-    # new_file = open(new_file_path, "w")
-    # new_file.write(file_modified_content)
-    # print(new_file_path, " is written.")
-    # new_file.close()
-
-# add trace.trace()
-# file_patch_content_lines = file_patch_content.splitlines()
-
-# TODO couper la où se trouvent les diff pour séparer par fichier 
-
-# line_numbers = [1, 1, 1]
-# another list for the patch file...
-
 
 # TODO
-# -insert for real (using the lines number)
 # -portability
 # -vectorial stuff ?
 
