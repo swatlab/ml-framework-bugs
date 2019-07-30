@@ -111,15 +111,15 @@ def printInsertedLinesNumbers(lines_numbers, traced_file_contents_line, trace_ca
 
 if __name__ == '__main__':
     commit_command = getVersionArguments()
+    
+    # obtenir contenu des fichiers à tracer
     filenames = commandFilepaths(commit_command)
     filepaths = filenames.splitlines()
-    split_patchfile = commandPatchfile(commit_command) # est une liste de strings (après split diff --git)
-
-    # fichiers à tracer
     file_contents = getFileContents(filepaths) # est une liste de strings (après read fichier)
     file_contents_lines = splitFileContents(file_contents) # est une liste de lignes de string (après splitlines)
     
-    # patch
+    # obtenir patch -pour chaque fichier séparément-
+    split_patchfile = commandPatchfile(commit_command) # est une liste de strings (après split diff --git)
     lines_numbers = findChangedLinesPerFile(split_patchfile)
     trace_call_Cpp = "SOURCE_CODE_TRACER.trace('patched function called');" # WILL CHANGE DEPENDING OF LANGUAGE AND THE METHOD CALLED
     
@@ -128,13 +128,12 @@ if __name__ == '__main__':
     # retirer éléments vide pour conserver cohérence
     split_patchfile, file_contents_lines, lines_numbers = removeEmptyElements(split_patchfile, file_contents_lines, lines_numbers)
     
-    # insérer la trace.
+    # insérer la trace et sauvegarder fichier tracé
     traced_file_contents_lines = copy.deepcopy(file_contents_lines)
     traced_file_contents_lines = insertTraceCpp(traced_file_contents_lines, lines_numbers, trace_call_Cpp)
-    
     writeTracedFile(traced_file_contents_lines)
     
-    # # test if insertion is success
+    # test pour vérifier numéro des lignes tracées
     printInsertedLinesNumbers(lines_numbers, traced_file_contents_lines, trace_call_Cpp)
     
 
