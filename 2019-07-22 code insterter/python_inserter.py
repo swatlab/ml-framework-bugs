@@ -13,11 +13,11 @@ import subprocess
 import sys
 
 def getVersionArguments():
-    # to comment when script ready
-    # TODO add Emilio improvement
-    sys.argv.append('efc3d6b65')
+    parser = argparse.ArgumentParser(description='Commits')
+    parser.add_argument('commits', metavar='C', type=str, nargs='+')
+    args = parser.parse_args()
 
-    commit_number = sys.argv[1]
+    commit_number = args.commits[0]
     commit_command = commit_number+'^..'+commit_number
     return commit_command
     
@@ -28,7 +28,7 @@ def commandFilepaths(commit_command):
     filenames = result_filenames.stdout.decode("utf-8")
     return filenames
     
-""" 
+"""
 Ouvre les fichiers à tracer et obtenir leur contenu textuel
 Retourne une liste de string.
 """
@@ -88,20 +88,20 @@ def insertTraceCpp(traced_file_contents_lines, lines_numbers, trace_call_Cpp):
         [traced_file_content_line.insert(n, trace_call_Cpp) for n in line_number[::-1]]
     return traced_file_contents_lines
 
-def writeTracedFile(traced_file_contents_lines):
+def writeTracedFile(traced_file_contents_lines, filepaths, overwrite = False):
     # TODO
     # portability of new file name
-    i = 1
-    for traced_file_content_line in traced_file_contents_lines:
+    for traced_file_content_line, filepath in zip(traced_file_contents_lines, filepaths):
         traced_file_content = ("\n".join(traced_file_content_line))
         
+        filename, file_extension = os.path.splitext(filepath)
+        
         # concatenation dans un nouveau fichier
-        new_file_path = "new_file"+str(i)+".py"
+        new_file_path = filepath if overwrite else "{}_traced{}".format(filename, file_extension)
         new_file = open(new_file_path, "w")
         new_file.write(traced_file_content)
         print(new_file_path, " is written.")
         new_file.close()
-        i += 1
 
 def printInsertedLinesNumbers(lines_numbers, traced_file_contents_line, trace_call_Cpp):
     print("Original file patched lines : \n", lines_numbers)
@@ -131,7 +131,8 @@ if __name__ == '__main__':
     # insérer la trace et sauvegarder fichier tracé
     traced_file_contents_lines = copy.deepcopy(file_contents_lines)
     traced_file_contents_lines = insertTraceCpp(traced_file_contents_lines, lines_numbers, trace_call_Cpp)
-    writeTracedFile(traced_file_contents_lines)
+    
+    writeTracedFile(traced_file_contents_lines, filepaths)
     
     # test pour vérifier numéro des lignes tracées
     printInsertedLinesNumbers(lines_numbers, traced_file_contents_lines, trace_call_Cpp)
@@ -140,9 +141,6 @@ if __name__ == '__main__':
 # TODO
 # -portability
 # -vectorial stuff ?
-
-# TODO portability
-# numero de commit
     
 # TODO
 # update question sur stackO
