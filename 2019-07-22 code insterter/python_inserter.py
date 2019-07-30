@@ -49,8 +49,8 @@ def splitFileContents(file_contents):
 
 def commandPatchfile(commit_command):
     # TODO verifier que les paths
-    resuly_patchfile = subprocess.run(['git', 'diff', commit_command], stdout=subprocess.PIPE)
-    patchfile = result.stdout.decode("utf-8")
+    result_patchfile = subprocess.run(['git', 'diff', commit_command], stdout=subprocess.PIPE)
+    patchfile = result_patchfile.stdout.decode("utf-8")
     
     split_patchfile = splitPatchfile(patchfile)
     
@@ -76,13 +76,24 @@ def findChangedLinesPerFile(split_patchfile):
         lines_numbers.append(findChangedLines(split_patch))
     return lines_numbers
 
+def removeEmptyElements(split_patchfile, file_contents_lines, lines_numbers):
+    split_patchfile = list(filter(None, split_patchfile))
+    file_contents_lines = list(filter(None, file_contents_lines))
+    lines_numbers = list(filter(None, lines_numbers))
+    return split_patchfile, file_contents_lines, lines_numbers
+
+def insertTraceCpp(traced_file_contents_lines, lines_numbers, trace_call_Cpp):
+    for traced_file_content_line, line_number in zip(traced_file_contents_lines, lines_numbers):
+        # ajout de trace_call sur liste inversée pour conserver le numéro de ligne
+        [traced_file_content_line.insert(n, trace_call_Cpp) for n in line_number[::-1]]
+    return traced_file_contents_lines
+
 def writeTracedFile(traced_file_contents_lines):
     # TODO
     # portability of new file name
     i = 1
     for traced_file_content_line in traced_file_contents_lines:
         traced_file_content = ("\n".join(traced_file_content_line))
-        print(i)
         
         # concatenation dans un nouveau fichier
         new_file_path = "new_file"+str(i)+".py"
@@ -91,6 +102,12 @@ def writeTracedFile(traced_file_contents_lines):
         print(new_file_path, " is written.")
         new_file.close()
         i += 1
+
+def printInsertedLinesNumbers(lines_numbers, traced_file_contents_line, trace_call_Cpp):
+    print("Original file patched lines : \n", lines_numbers)
+    indicesa = [i for i, x in enumerate(traced_file_contents_lines[0]) if x == trace_call_Cpp]
+    indicesb = [i for i, x in enumerate(traced_file_contents_lines[1]) if x == trace_call_Cpp]
+    print("Trace.trace() is inserted at these lines : \n" ,indicesa, indicesb)
 
 if __name__ == '__main__':
     commit_command = getVersionArguments()
@@ -102,30 +119,23 @@ if __name__ == '__main__':
     file_contents = getFileContents(filepaths) # est une liste de strings (après read fichier)
     file_contents_lines = splitFileContents(file_contents) # est une liste de lignes de string (après splitlines)
     
-    # les éléments de première dimension de file_contents_lines doivent correspondre avec ceux
-    # de split_patchfile.
-    
     # patch
     lines_numbers = findChangedLinesPerFile(split_patchfile)
     trace_call_Cpp = "SOURCE_CODE_TRACER.trace('patched function called');" # WILL CHANGE DEPENDING OF LANGUAGE AND THE METHOD CALLED
     
-    # remove empty elements
-    split_patchfile = list(filter(None, split_patchfile))
-    file_contents_lines = list(filter(None, file_contents_lines))
-    lines_numbers = list(filter(None, lines_numbers))
+    # les éléments de première dimension de file_contents_lines doivent correspondre avec ceux
+    # de split_patchfile.
+    # retirer éléments vide pour conserver cohérence
+    split_patchfile, file_contents_lines, lines_numbers = removeEmptyElements(split_patchfile, file_contents_lines, lines_numbers)
     
+    # insérer la trace.
     traced_file_contents_lines = copy.deepcopy(file_contents_lines)
-    for traced_file_content_line, line_number in zip(traced_file_contents_lines, lines_numbers):
-        # ajout de trace_call sur liste inversée pour conserver le numéro de ligne
-        [traced_file_content_line.insert(n, trace_call_Cpp) for n in line_number[::-1]]
-    
-    # # test if insertion is success
-    # print(lines_numbers)
-    # indicesa = [i for i, x in enumerate(traced_file_contents_lines[0]) if x == trace_call_Cpp]
-    # indicesb = [i for i, x in enumerate(traced_file_contents_lines[1]) if x == trace_call_Cpp]
-    # print(indicesa, indicesb)
+    traced_file_contents_lines = insertTraceCpp(traced_file_contents_lines, lines_numbers, trace_call_Cpp)
     
     writeTracedFile(traced_file_contents_lines)
+    
+    # # test if insertion is success
+    printInsertedLinesNumbers(lines_numbers, traced_file_contents_lines, trace_call_Cpp)
     
 
 # TODO
