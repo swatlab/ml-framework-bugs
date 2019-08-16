@@ -42,6 +42,8 @@ def analyze_python_file(file_contents_lines, lines_numbers):
             
             test_str = file_content_line[syntax_index]
             matches = re.findall(regex, test_str, re.MULTILINE)
+            empty_line_match = re.findall(empty_line_reg, test_str, re.MULTILINE)
+            unindented_line_match = re.findall(unindented_line_reg, test_str, re.MULTILINE)
             print("BEGIN ANALYSIS")
             print("syntax_index : ", syntax_index, "\n line changed : ", line_number, " - ", file_contents_lines[0][syntax_index])
             
