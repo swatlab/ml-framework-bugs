@@ -29,6 +29,18 @@ def splitFileContents(file_contents):
         file_contents_lines.append(file_content.splitlines())
     return file_contents_lines
 
+def is_function_def(test_str, regex):
+    function_matches = re.findall(regex, test_str, re.MULTILINE)
+    return len(function_matches) == 1
+
+def is_normal_line(test_str, regex):
+    function_matches = re.findall(regex, test_str, re.MULTILINE)
+    return len(function_matches) == 0
+
+def find_matches(test_str, regex):
+    matches = re.findall(regex, test_str, re.MULTILINE)
+    return matches
+
 def analyze_python_file(file_contents_lines, lines_numbers):
     # vars definitions
     are_insertable_lines = []
@@ -57,10 +69,9 @@ def analyze_python_file(file_contents_lines, lines_numbers):
             test_str = file_content_line[syntax_index]
             function_matches = re.findall(regex, test_str, re.MULTILINE)
             
-            
             # if already matched, then changed line is a function def
             # TODO case 2 : insert trace call under function def
-            if len(function_matches) == 1:
+            if is_function_def(file_content_line[syntax_index], regex):
                 are_insterable_lines.append(tuple((line_number, True)))
                 print("changed line is a python function def")
             else:
@@ -68,16 +79,17 @@ def analyze_python_file(file_contents_lines, lines_numbers):
                 line_index -= 1
                 syntax_index -= 1
                 
-                while 0 <= syntax_index and len(function_matches) == 0: # & syntax_index != in lines_numbers
-                    test_str = file_content_line[syntax_index]
-                    function_matches = re.findall(regex, test_str, re.MULTILINE)
+                while 0 <= syntax_index and is_normal_line(file_content_line[syntax_index], regex): # & syntax_index != in lines_numbers
+                    
+                    # regex test
                     print("iter ", line_index)
     
-                    if len(function_matches) == 1:
+                    if is_function_def(file_content_line[syntax_index], regex):
                         print("FUNCTION DEF FOUND")
-                        print(function_matches)
+                        print(find_matches(file_content_line[syntax_index], regex))
                         are_insertable_lines.append(tuple((line_number, True)))
                     else:
+                        print("else")
                         line_index -= 1
                         syntax_index -= 1
                 
