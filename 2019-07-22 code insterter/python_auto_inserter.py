@@ -63,7 +63,7 @@ def analyze_python_file(file_contents_lines, lines_numbers):
         # for each changed line
         for line_number in lines_numbers:
             
-            # TODO explain this
+            # indexes definition
             line_index = line_number # index for debugging. Is exact number of the line
             syntax_index = line_number - 1 #start point of analysis. Is line_number - 1 because of list access (start at 0)
             print("BEGIN ANALYSIS")
@@ -80,6 +80,7 @@ def analyze_python_file(file_contents_lines, lines_numbers):
                 # reason why : we check if def line, it's not, check if normal line, it is, then we continue while loop
                 # weird ?
                 while 0 <= syntax_index and is_normal_line(file_content_line[syntax_index]): # & syntax_index != in lines_numbers
+                    
                     # go to previous lines (decreasing order of lines number) until a function definition is reached
                     line_index -= 1
                     syntax_index -= 1
