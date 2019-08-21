@@ -5,6 +5,9 @@ Created on Wed Aug 14 15:19:31 2019
 @author: kevin
 """
 
+# https://docs.python.org/2/library/trace.html
+# https://docs.python.org/3.0/library/trace.html
+
 import argparse
 import copy
 import os
@@ -27,11 +30,16 @@ def splitFileContents(file_contents):
     return file_contents_lines
 
 def analyze_python_file(file_contents_lines, lines_numbers):
+    # vars definitions
     are_insertable_lines = []
     regex = r"(def \w+\(.*\):|if __name__ == '__main__':|if __name__ == \"__main__\":)"
     empty_line_reg = r"^\s*$"
     unindented_line_reg = r"^\S.+"
-        
+      
+    # file_contents_lines : le texte de chaque fichier modifié.
+    # 2D list : fichier, lignes de code
+    # est une liste de lignes de string (après splitlines)
+    
     # for each changed file, get changed lines numbers
     for file_content_line in file_contents_lines:
         # for each changed line
@@ -45,7 +53,7 @@ def analyze_python_file(file_contents_lines, lines_numbers):
             empty_line_match = re.findall(empty_line_reg, test_str, re.MULTILINE)
             unindented_line_match = re.findall(unindented_line_reg, test_str, re.MULTILINE)
             print("BEGIN ANALYSIS")
-            print("syntax_index : ", syntax_index, "\n line changed : ", line_number, " - ", file_contents_lines[0][syntax_index])
+            print("syntax_index : ", syntax_index, "\n line changed : ", line_number, " - ", file_content_line[syntax_index])
             
             if len(matches) == 1:
                 are_insterable_lines.append(tuple((line_number, True)))
@@ -81,11 +89,12 @@ if __name__ == '__main__':
     filepaths = []
     lines_numbers = []
     filepaths.append("./test_dataloader.py")
-    lines_numbers.append(376)
+    # lines_numbers : 2D list ?
+    lines_numbers.append(579)
     file_contents = getFileContents(filepaths)
     trace_call_Cpp = "print('TRACE CALL HERE')"
     
-    # le texte de chaque fichier modifié.
+    # file_contents_lines : le texte de chaque fichier modifié.
     # 2D list : fichier, lignes de code
     # est une liste de lignes de string (après splitlines)
     file_contents_lines = splitFileContents(file_contents)
