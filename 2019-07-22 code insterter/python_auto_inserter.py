@@ -35,6 +35,8 @@ def analyze_python_file(file_contents_lines, lines_numbers):
     regex = r"(def \w+\(.*\):|if __name__ == '__main__':|if __name__ == \"__main__\":)"
     empty_line_reg = r"^\s*$"
     unindented_line_reg = r"^\S.+"
+    # empty_line_match = re.findall(empty_line_reg, test_str, re.MULTILINE)
+    # unindented_line_match = re.findall(unindented_line_reg, test_str, re.MULTILINE)
       
     # file_contents_lines : le texte de chaque fichier modifié.
     # 2D list : fichier, lignes de code
@@ -46,39 +48,38 @@ def analyze_python_file(file_contents_lines, lines_numbers):
         for line_number in lines_numbers:
             
             # TODO explain this
-            line_index = line_number
-            syntax_index = line_number - 1 #start point of analysis
+            line_index = line_number # index for debugging. Is exact number of the line
+            syntax_index = line_number - 1 #start point of analysis. Is line_number - 1 because of list access (start at 0)
             print("BEGIN ANALYSIS")
             print("syntax_index : ", syntax_index, "\n line changed : ", line_number, " - ", file_content_line[syntax_index])
             
             # first regex test, similar to greedy algorithm
             test_str = file_content_line[syntax_index]
             function_matches = re.findall(regex, test_str, re.MULTILINE)
-            empty_line_match = re.findall(empty_line_reg, test_str, re.MULTILINE)
-            unindented_line_match = re.findall(unindented_line_reg, test_str, re.MULTILINE)
             
             
+            # if already matched, then changed line is a function def
+            # TODO case 2 : insert trace call under function def
             if len(function_matches) == 1:
                 are_insterable_lines.append(tuple((line_number, True)))
                 print("changed line is a python function def")
-                # TODO case 2 : insert trace call under function def
             else:
-                line_index = line_index - 1
+                # go to previous lines (decreasing order of lines number) until a function definition is reached
+                line_index -= 1
                 syntax_index -= 1
-            # go to previous lines (decreasing order of lines number) until a function definition is reached
-            while 0 <= syntax_index and len(function_matches) == 0: # & syntax_index != in lines_numbers 
-                print(len(function_matches) == 0)
-                test_str = file_content_line[syntax_index]
-                function_matches = re.findall(regex, test_str, re.MULTILINE)
-                print("iter ", line_index)
-
-                if len(function_matches) == 1:
-                    print("FUNCTION DEF FOUND")
-                    print(function_matches)
-                    are_insertable_lines.append(tuple((line_number, True)))
-                else:
-                    line_index -= 1
-                    syntax_index -= 1
+                
+                while 0 <= syntax_index and len(function_matches) == 0: # & syntax_index != in lines_numbers
+                    test_str = file_content_line[syntax_index]
+                    function_matches = re.findall(regex, test_str, re.MULTILINE)
+                    print("iter ", line_index)
+    
+                    if len(function_matches) == 1:
+                        print("FUNCTION DEF FOUND")
+                        print(function_matches)
+                        are_insertable_lines.append(tuple((line_number, True)))
+                    else:
+                        line_index -= 1
+                        syntax_index -= 1
                 
 def insertTraceCpp(traced_file_contents_lines, lines_numbers, trace_call_Cpp):
     for traced_file_content_line, line_number in zip(traced_file_contents_lines, lines_numbers):
