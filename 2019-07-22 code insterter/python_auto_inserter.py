@@ -75,23 +75,21 @@ def analyze_python_file(file_contents_lines, lines_numbers):
                 are_insterable_lines.append(tuple((line_number, True)))
                 print("changed line is a python function def")
             else:
-                # go to previous lines (decreasing order of lines number) until a function definition is reached
-                line_index -= 1
-                syntax_index -= 1
-                
+                # TODO remove is_normal_line by should_continue or smt
+                # reason why : we check if def line, it's not, check if normal line, it is, then we continue while loop
+                # weird ?
                 while 0 <= syntax_index and is_normal_line(file_content_line[syntax_index], regex): # & syntax_index != in lines_numbers
+                    # go to previous lines (decreasing order of lines number) until a function definition is reached
+                    line_index -= 1
+                    syntax_index -= 1
                     
                     # regex test
                     print("iter ", line_index)
     
                     if is_function_def(file_content_line[syntax_index], regex):
-                        print("FUNCTION DEF FOUND")
+                        print("FUNCTION DEF FOUND at line ", line_index, " :")
                         print(find_matches(file_content_line[syntax_index], regex))
                         are_insertable_lines.append(tuple((line_number, True)))
-                    else:
-                        print("else")
-                        line_index -= 1
-                        syntax_index -= 1
                 
 def insertTraceCpp(traced_file_contents_lines, lines_numbers, trace_call_Cpp):
     for traced_file_content_line, line_number in zip(traced_file_contents_lines, lines_numbers):
