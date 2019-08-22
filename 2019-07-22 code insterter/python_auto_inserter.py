@@ -45,10 +45,19 @@ def is_normal_line(test_str):
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 0
 
+def is_empty_line(test_str):
+    empty_line_regex = r"^\s*$"
+    empty_line_match = re.findall(empty_line_regex, test_str, re.MULTILINE)
+    return len(empty_line_match) == 1
+
 def find_function_matches(test_str):
     regex = r"(def \w+\(.*\):|if __name__ == '__main__':|if __name__ == \"__main__\":)"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return function_matches
+
+# https://stackoverflow.com/a/13649013/9876427
+def get_indentation_level(string):
+    return len(string) - len(string.lstrip(" "))
 
 def analyze_python_file(file_contents_lines, lines_numbers):
     # vars definitions
@@ -65,7 +74,7 @@ def analyze_python_file(file_contents_lines, lines_numbers):
             
             # indexes definition
             line_index = line_number # index for debugging. Is exact number of the line
-            syntax_index = line_number - 1 #start point of analysis. Is line_number - 1 because of list access (start at 0)
+            syntax_index = line_number - 1 # start point of analysis. Is line_number - 1 because of list access (start at 0)
             print("BEGIN ANALYSIS")
             print("syntax_index : ", syntax_index, "\n line changed : ", line_number, " - ", file_content_line[syntax_index])
             
@@ -79,6 +88,7 @@ def analyze_python_file(file_contents_lines, lines_numbers):
                 # TODO remove is_normal_line by should_continue or smt
                 # reason why : we check if def line, it's not, check if normal line, it is, then we continue while loop
                 # weird ?
+                priority_indentation = get_indentation_level(file_content_line[syntax_index])
                 while 0 <= syntax_index and is_normal_line(file_content_line[syntax_index]): # & syntax_index != in lines_numbers
                     
                     # go to previous lines (decreasing order of lines number) until a function definition is reached
@@ -87,11 +97,23 @@ def analyze_python_file(file_contents_lines, lines_numbers):
                     
                     # regex test
                     print("iter ", line_index)
+                    
     
                     if is_function_def(file_content_line[syntax_index]):
-                        print("FUNCTION DEF FOUND at line ", line_index, " :")
-                        print(find_function_matches(file_content_line[syntax_index]))
-                        are_insertable_lines.append(tuple((line_number, True)))
+                        def_indentation = get_indentation_level(file_content_line[syntax_index])
+                        if def_indentation < priority_indentation:
+                            print("FUNCTION DEF FOUND at line ", line_index, " :")
+                            print(find_function_matches(file_content_line[syntax_index]))
+                            are_insertable_lines.append(tuple((line_number, True)))
+                    elif is_empty_line(file_content_line[syntax_index]):
+                        # pass to next line
+                        print("empty line. no indentation")
+                    elif is_normal_line(file_content_line[syntax_index]):
+                        # check tabulation
+                        current_indentation = get_indentation_level(file_content_line[syntax_index])
+                        if current_indentation < priority_indentation:
+                            priority_indentation = current_indentation
+                            print(priority_indentation)
                 
 def insertTraceCpp(traced_file_contents_lines, lines_numbers, trace_call_Cpp):
     for traced_file_content_line, line_number in zip(traced_file_contents_lines, lines_numbers):
