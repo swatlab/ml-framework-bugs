@@ -36,12 +36,12 @@ def splitFileContents(file_contents):
     # unindented_line_match = re.findall(unindented_line_reg, test_str, re.MULTILINE)
 
 def is_function_def(test_str):
-    regex = r"(def \w+\(.*\):|if __name__ == '__main__':|if __name__ == \"__main__\":)"
+    regex = r"(def \w+\(.*|if __name__ == '__main__':|if __name__ == \"__main__\":)"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 1
 
 def is_normal_line(test_str):
-    regex = r"(def \w+\(.*\):|if __name__ == '__main__':|if __name__ == \"__main__\":)"
+    regex = r"(def \w+\(.*|if __name__ == '__main__':|if __name__ == \"__main__\":)"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 0
 
@@ -51,7 +51,7 @@ def is_empty_line(test_str):
     return len(empty_line_match) == 1
 
 def find_function_matches(test_str):
-    regex = r"(def \w+\(.*\):|if __name__ == '__main__':|if __name__ == \"__main__\":)"
+    regex = r"(def \w+\(.*|if __name__ == '__main__':|if __name__ == \"__main__\":)"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return function_matches
 
@@ -89,7 +89,8 @@ def analyze_python_file(file_contents_lines, lines_numbers):
                 # reason why : we check if def line, it's not, check if normal line, it is, then we continue while loop
                 # weird ?
                 priority_indentation = get_indentation_level(file_content_line[syntax_index])
-                while 0 <= syntax_index and is_normal_line(file_content_line[syntax_index]): # & syntax_index != in lines_numbers
+                has_found_def = False
+                while 520 <= syntax_index and not has_found_def: # & syntax_index != in lines_numbers
                     
                     # go to previous lines (decreasing order of lines number) until a function definition is reached
                     line_index -= 1
@@ -101,14 +102,13 @@ def analyze_python_file(file_contents_lines, lines_numbers):
     
                     if is_function_def(file_content_line[syntax_index]):
                         def_indentation = get_indentation_level(file_content_line[syntax_index])
+                        print(def_indentation, priority_indentation)
                         if def_indentation < priority_indentation:
                             print("FUNCTION DEF FOUND at line ", line_index, " :")
                             print(find_function_matches(file_content_line[syntax_index]))
                             are_insertable_lines.append(tuple((line_number, True)))
-                    elif is_empty_line(file_content_line[syntax_index]):
-                        # pass to next line
-                        print("empty line. no indentation")
-                    elif is_normal_line(file_content_line[syntax_index]):
+                            has_found_def = True
+                    elif is_normal_line(file_content_line[syntax_index]) and not is_empty_line(file_content_line[syntax_index]):
                         # check tabulation
                         current_indentation = get_indentation_level(file_content_line[syntax_index])
                         if current_indentation < priority_indentation:
