@@ -90,19 +90,15 @@ def analyze_python_file(file_contents_lines, lines_numbers):
                 # weird ?
                 priority_indentation = get_indentation_level(file_content_line[syntax_index])
                 has_found_def = False
-                while 520 <= syntax_index and not has_found_def: # & syntax_index != in lines_numbers
+                while 0 <= syntax_index and not has_found_def: # & syntax_index != in lines_numbers
                     
                     # go to previous lines (decreasing order of lines number) until a function definition is reached
                     line_index -= 1
                     syntax_index -= 1
-                    
-                    # regex test
-                    print("iter ", line_index)
-                    
     
                     if is_function_def(file_content_line[syntax_index]):
                         def_indentation = get_indentation_level(file_content_line[syntax_index])
-                        print(def_indentation, priority_indentation)
+                        print(def_indentation, priority_indentation, "at", line_index)
                         if def_indentation < priority_indentation:
                             print("FUNCTION DEF FOUND at line ", line_index, " :")
                             print(find_function_matches(file_content_line[syntax_index]))
@@ -113,7 +109,11 @@ def analyze_python_file(file_contents_lines, lines_numbers):
                         current_indentation = get_indentation_level(file_content_line[syntax_index])
                         if current_indentation < priority_indentation:
                             priority_indentation = current_indentation
-                            print(priority_indentation)
+                            print(priority_indentation, "at", line_index)
+                if has_found_def:
+                    print("done!")
+                else:
+                    print("insertion is impossible here")
                 
 def insertTraceCpp(traced_file_contents_lines, lines_numbers, trace_call_Cpp):
     for traced_file_content_line, line_number in zip(traced_file_contents_lines, lines_numbers):
@@ -128,7 +128,7 @@ if __name__ == '__main__':
     lines_numbers = []
     filepaths.append("./test_dataloader.py")
     # lines_numbers : 2D list ?
-    lines_numbers.append(579)
+    lines_numbers.append(522)
     file_contents = getFileContents(filepaths)
     trace_call_Cpp = "print('TRACE CALL HERE')"
     
