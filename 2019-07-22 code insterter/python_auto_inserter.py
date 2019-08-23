@@ -41,7 +41,7 @@ def is_function_def(test_str):
     return len(function_matches) == 1
 
 def is_normal_line(test_str):
-    regex = r"(def \w+\(.*|if .+:|elif .+:|else.+:||try:|except \w+:|for .+:|while .+:)"
+    regex = r"(def \w+\(.*|if .+:|elif .+:|else.+:|try:|except \w+:|for .+:|while .+:)"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 0
 
@@ -52,7 +52,7 @@ def is_empty_line(test_str):
 
 # find the litteral value found for printing
 def find_function_matches(test_str):
-    regex = r"(def \w+\(.*|if .+:|elif .+:|else.+:||try:|except \w+:|for .+:|while .+:)"
+    regex = r"(def \w+\(.*|if .+:|elif .+:|else.+:|try:|except \w+:|for .+:|while .+:)"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return function_matches
 
@@ -137,7 +137,7 @@ if __name__ == '__main__':
     lines_numbers = []
     filepaths.append("./test_dataloader.py")
     # lines_numbers : 2D list ?
-    lines_numbers.append(567)
+    lines_numbers.append(384)
     file_contents = getFileContents(filepaths)
     trace_call_Cpp = "print('TRACE CALL HERE')"
     
