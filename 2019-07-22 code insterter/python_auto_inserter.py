@@ -46,7 +46,7 @@ def is_normal_line(test_str):
     return len(function_matches) == 0
 
 def is_empty_line(test_str):
-    empty_line_regex = r"^\s*$"
+    empty_line_regex = r"^\s*$|#"
     empty_line_match = re.findall(empty_line_regex, test_str, re.MULTILINE)
     return len(empty_line_match) == 1
 
@@ -63,6 +63,16 @@ def get_indentation_level(string):
 
 
 
+def is_unindented_insertable(file_content_line, syntax_index):
+    while syntax_index + 1 < len(file_content_line):
+        syntax_index -= 1
+        
+        if file_content_line[syntax_index]:
+         #line non indentée (normale ou def) arrêt concluant true
+        
+        #ligne vide, comment,  = continue pas concluant
+            print("qqch")
+            return True
 
 
 def analyze_python_file(file_contents_lines, lines_numbers):
@@ -87,6 +97,12 @@ def analyze_python_file(file_contents_lines, lines_numbers):
             # first regex test, similar to greedy algorithm.            
             # if already matched, then changed line is a function def
             # TODO case 2 : insert trace call under function def
+            
+            # soit on parcourt vers le bas. soit c'est ligne non identée soit c'est rien. rien = ligne vide, comment ou fin de file
+            if get_indentation_level(file_content_line[syntax_index]) == 0:
+                if is_unindented_insertable(file_content_line, syntax_index):
+                    are_insertable_lines.append(tuple((line_number, True)))
+                    print("changed line is a unindented line")
             if is_function_def(file_content_line[syntax_index]):
                 are_insterable_lines.append(tuple((line_number, True)))
                 print("changed line is a python function def")
@@ -137,7 +153,7 @@ if __name__ == '__main__':
     lines_numbers = []
     filepaths.append("./test_dataloader.py")
     # lines_numbers : 2D list ?
-    lines_numbers.append(579)
+    lines_numbers.append(373)
     file_contents = getFileContents(filepaths)
     trace_call_Cpp = "print('TRACE CALL HERE')"
     
@@ -147,3 +163,4 @@ if __name__ == '__main__':
     file_contents_lines = splitFileContents(file_contents)
     # TODO check if file is python file
     analyze_python_file(file_contents_lines, lines_numbers)
+print("unindented line")
