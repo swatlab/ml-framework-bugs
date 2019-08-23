@@ -66,11 +66,12 @@ def get_indentation_level(string):
 def is_unindented_insertable(file_content_line, syntax_index):
     need_continue = True
     insertable = False
-    while syntax_index + 1 < len(file_content_line) and need_continue:
+    print("mode parcourir", syntax_index + 1, len(file_content_line))
+    syntax_index += 1
+    while syntax_index < len(file_content_line) and need_continue:
         syntax_index += 1
         
-        
-        print("mode parcourir", syntax_index + 1)
+        print("mode parcourir", syntax_index + 1, len(file_content_line))
         #line non indentée (normale ou def) arrêt concluant true
         is_concluant_line = is_function_def(file_content_line[syntax_index]) or is_normal_line(file_content_line[syntax_index])
         if get_indentation_level(file_content_line[syntax_index]) != 0:
@@ -84,7 +85,13 @@ def is_unindented_insertable(file_content_line, syntax_index):
         elif is_empty_line(file_content_line[syntax_index]):
             need_continue = True
             insertable = False
+        elif syntax_index == len(file_content_line):
+            need_continue = False
+            insertable= True
             
+    if syntax_index == len(file_content_line):
+        need_continue = False
+        insertable= True
     return insertable
             
 
