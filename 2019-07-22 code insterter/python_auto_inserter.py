@@ -64,15 +64,29 @@ def get_indentation_level(string):
 
 
 def is_unindented_insertable(file_content_line, syntax_index):
-    while syntax_index + 1 < len(file_content_line):
-        syntax_index -= 1
+    need_continue = True
+    insertable = False
+    while syntax_index + 1 < len(file_content_line) and need_continue:
+        syntax_index += 1
         
-        if file_content_line[syntax_index]:
-         #line non indentée (normale ou def) arrêt concluant true
         
+        print("mode parcourir", syntax_index + 1)
+        #line non indentée (normale ou def) arrêt concluant true
+        is_concluant_line = is_function_def(file_content_line[syntax_index]) or is_normal_line(file_content_line[syntax_index])
+        if get_indentation_level(file_content_line[syntax_index]) != 0:
+            need_continue = False
+            insertable= False
+        elif get_indentation_level(file_content_line[syntax_index]) == 0 and is_concluant_line:
+            print("ok bloc non-indenté")
+            need_continue = False
+            insertable= True
         #ligne vide, comment,  = continue pas concluant
-            print("qqch")
-            return True
+        elif is_empty_line(file_content_line[syntax_index]):
+            need_continue = True
+            insertable = False
+            
+    return insertable
+            
 
 
 def analyze_python_file(file_contents_lines, lines_numbers):
@@ -103,7 +117,10 @@ def analyze_python_file(file_contents_lines, lines_numbers):
                 if is_unindented_insertable(file_content_line, syntax_index):
                     are_insertable_lines.append(tuple((line_number, True)))
                     print("changed line is a unindented line")
-            if is_function_def(file_content_line[syntax_index]):
+                    print(are_insertable_lines)
+                else:
+                    print("insertion is impossible here")
+            elif is_function_def(file_content_line[syntax_index]):
                 are_insterable_lines.append(tuple((line_number, True)))
                 print("changed line is a python function def")
             else:
@@ -154,6 +171,9 @@ if __name__ == '__main__':
     filepaths.append("./test_dataloader.py")
     # lines_numbers : 2D list ?
     lines_numbers.append(373)
+    lines_numbers.append(376)
+    lines_numbers.append(1720)
+    lines_numbers.append(381)
     file_contents = getFileContents(filepaths)
     trace_call_Cpp = "print('TRACE CALL HERE')"
     
@@ -163,4 +183,3 @@ if __name__ == '__main__':
     file_contents_lines = splitFileContents(file_contents)
     # TODO check if file is python file
     analyze_python_file(file_contents_lines, lines_numbers)
-print("unindented line")
