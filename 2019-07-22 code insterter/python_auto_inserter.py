@@ -36,12 +36,12 @@ def splitFileContents(file_contents):
     # unindented_line_match = re.findall(unindented_line_reg, test_str, re.MULTILINE)
 
 def is_function_def(test_str):
-    regex = r"(def \w+\(.*|if __name__ == '__main__':|if __name__ == \"__main__\":)"
+    regex = r"(def \w+\(.*|if .+:|try:|except \w+:|for .+:|while .+:)"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 1
 
 def is_normal_line(test_str):
-    regex = r"(def \w+\(.*|if __name__ == '__main__':|if __name__ == \"__main__\":)"
+    regex = r"(def \w+\(.*|if .+:|try:|except \w+:|for .+:|while .+:)"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 0
 
@@ -50,14 +50,20 @@ def is_empty_line(test_str):
     empty_line_match = re.findall(empty_line_regex, test_str, re.MULTILINE)
     return len(empty_line_match) == 1
 
+# find the litteral value found for printing
 def find_function_matches(test_str):
-    regex = r"(def \w+\(.*|if __name__ == '__main__':|if __name__ == \"__main__\":)"
+    regex = r"(def \w+\(.*|if .+:|try:|except \w+:|for .+:|while .+:)"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return function_matches
 
 # https://stackoverflow.com/a/13649013/9876427
 def get_indentation_level(string):
     return len(string) - len(string.lstrip(" "))
+
+
+
+
+
 
 def analyze_python_file(file_contents_lines, lines_numbers):
     # vars definitions
@@ -110,8 +116,11 @@ def analyze_python_file(file_contents_lines, lines_numbers):
                         if current_indentation < priority_indentation:
                             priority_indentation = current_indentation
                             print(priority_indentation, "at", line_index)
+                            
                 if has_found_def:
-                    print("done!")
+                    print("insertion is possible at these lines : ")
+                    print(are_insertable_lines)
+                    
                 else:
                     print("insertion is impossible here")
                 
@@ -128,7 +137,7 @@ if __name__ == '__main__':
     lines_numbers = []
     filepaths.append("./test_dataloader.py")
     # lines_numbers : 2D list ?
-    lines_numbers.append(522)
+    lines_numbers.append(567)
     file_contents = getFileContents(filepaths)
     trace_call_Cpp = "print('TRACE CALL HERE')"
     
