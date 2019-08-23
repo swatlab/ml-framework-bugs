@@ -36,12 +36,12 @@ def splitFileContents(file_contents):
     # unindented_line_match = re.findall(unindented_line_reg, test_str, re.MULTILINE)
 
 def is_function_def(test_str):
-    regex = r"(def \w+\(.*|if .+:|try:|except \w+:|for .+:|while .+:)"
+    regex = r"(def \w+\(.*|if .+:|elif .+:|else.+:|try:|except \w+:|for .+:|while .+:)"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 1
 
 def is_normal_line(test_str):
-    regex = r"(def \w+\(.*|if .+:|try:|except \w+:|for .+:|while .+:)"
+    regex = r"(def \w+\(.*|if .+:|elif .+:|else.+:||try:|except \w+:|for .+:|while .+:)"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 0
 
@@ -52,7 +52,7 @@ def is_empty_line(test_str):
 
 # find the litteral value found for printing
 def find_function_matches(test_str):
-    regex = r"(def \w+\(.*|if .+:|try:|except \w+:|for .+:|while .+:)"
+    regex = r"(def \w+\(.*|if .+:|elif .+:|else.+:||try:|except \w+:|for .+:|while .+:)"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return function_matches
 
