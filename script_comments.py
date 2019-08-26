@@ -53,6 +53,18 @@ def wait_for_time_and_continue(resp):
 
 
 def get_comments(base_request_params, request_auth, use_request_session=False):
+    """
+    For each csv generated with script_issues, opens the csv and takes the comments_url
+    to make the requests.
+    Uses a request next page number to get all the comments pages. (it was either count max pages or
+    check if there is a next page, but next pages is more stable for comments)
+    
+    parameters :
+        base_request_params : client user and client access token
+        request_aut : client id and client secret
+        use_request_session : bool that indicate if we want to create a request session (probably for
+                                                                                         a more stable connection)
+    """
     CLOSED_ISSUES_DIR = Path('data/closed_issues/')
     CLOSED_ISSUES_DIR.mkdir(parents=True, exist_ok=True)
     CLOSED_ISSUES_COMMENTS_JSON_DIR.mkdir(parents=True, exist_ok=True)
