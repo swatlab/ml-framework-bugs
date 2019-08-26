@@ -114,6 +114,9 @@ def printInsertedLinesNumbers(lines_numbers, traced_file_contents_line, trace_ca
 ----------------------- code syntax analyzer ------------------------
 """
 def analyze_python_file(file_contents_lines, lines_numbers):
+    """
+    TODO replace with code in python_auto_inserter.py
+    """
     are_insertable_lines = []
     # python : def keyword, if __name__ == '__main__': or if __name__ == "__main__":
     regex = r"(def \w+\(.*\):|if __name__ == '__main__':|if __name__ == \"__main__\":)"
@@ -169,16 +172,16 @@ if __name__ == '__main__':
     # retirer éléments vide pour conserver cohérence
     split_patchfile, file_contents_lines, lines_numbers = removeEmptyElements(split_patchfile, file_contents_lines, lines_numbers)
     
-    analyze_python_file(file_contents_lines, lines_numbers)
+    #analyze_python_file(file_contents_lines, lines_numbers)
     
     # insérer la trace et sauvegarder fichier tracé
-    # traced_file_contents_lines = copy.deepcopy(file_contents_lines)
-    # traced_file_contents_lines = insertTraceCpp(traced_file_contents_lines, lines_numbers, trace_call_Cpp)
+    traced_file_contents_lines = copy.deepcopy(file_contents_lines)
+    traced_file_contents_lines = insertTraceCpp(traced_file_contents_lines, lines_numbers, trace_call_Cpp)
     
-    # writeTracedFile(traced_file_contents_lines, filepaths)
+    writeTracedFile(traced_file_contents_lines, filepaths)
     
     # # test pour vérifier numéro des lignes tracées
-    # printInsertedLinesNumbers(lines_numbers, traced_file_contents_lines, trace_call_Cpp)
+    printInsertedLinesNumbers(lines_numbers, traced_file_contents_lines, trace_call_Cpp)
     
 
 # TODO
