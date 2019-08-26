@@ -10,32 +10,55 @@ from dotenv import load_dotenv
 
 BASE_ISSUES_DIR = Path("data/issues/")
 
+
 def get_issues(framw_row, label = None):
+    """
+    For one framework, checks if labels are needed then makes requests.
+    Uses a incremental page number to get all the requests.
+    
+    parameters :
+        framw_row : a row in the frameworks csv
+        labal : the wanted label(s) for the framework
+    """
     issues_uri = framw_row["apiUri"]
     params = { "client_id": CLIENT_ID, "client_secret": CLIENT_SECRET, "state": "all", 
                "per_page": 100}
+    
+    
     if label:
         assert isinstance(label, str)
         params['labels'] = label
+        
+    # Make request one request only.
+    # it is to obtain the number of pages before making all requests
     resp = requests.get(issues_uri, params = params)
-
     js_resp = resp.json()
     max_pages = get_max_pages_from_header(resp.headers)
     print("max pages : ", max_pages)
-    if max_pages is None: # No pages are returned by the Link header
+    
+    # If no pages are returned by the Link header
+    if max_pages is None:
         return [js_resp]
+    
+    # Check that the type of the response is correct
     responses = js_resp
     assert isinstance(responses, list)
+    
+    # Iterate from 2nd page to number of max pages
     for i in range(2, max_pages+1):
+        
+        # Infinite loop to re-launch request. Sometimes, the server blocks the connection
+        # because of too many requests.
         while True:
             try:
+                # make request andsave result in responses
                 params["page"] = i
-                #sleep(5)
                 resp = requests.get(issues_uri, params = params)
                 print("Get page ", i,framw_row['framework'], " at ", datetime.datetime.now())
                 js_resp = resp.json()
                 responses.extend(js_resp)
             except (ConnectionError, requests.exceptions.ChunkedEncodingError):
+                print("connection lost at ", datetime.datetime.now(), ". Retrying in 10 seconds.")
                 sleep(10)
                 continue
             break
