@@ -92,7 +92,7 @@ def is_unindented_insertable(file_content_line, syntax_index):
     """
     Check if the file_content_line[syntax_index] line is an insertable line.
     
-    an unindented line is insertable if the the code block is a running code (non-definition code).
+    an unindented line is insertable if the the code block is a runable code (non-definition code).
     General rule : if the line after is also unindented (and a def or normal line), the line is insertable. The reason is that 
     it doesn't not break in a function def, for example. However, not all cases are covered.
     
@@ -102,12 +102,11 @@ def is_unindented_insertable(file_content_line, syntax_index):
     """
     need_continue = True
     insertable = False
-    print("scour unindented mode from", syntax_index + 1, len(file_content_line))
     syntax_index += 1
     while syntax_index < len(file_content_line) and need_continue:
         syntax_index += 1
         
-        print("scour mode", syntax_index + 1, len(file_content_line))
+        print("scour mode at line", syntax_index + 1)
         
         # if a next line is unindented (normal or def) concluant result, True
         is_concluant_line = is_function_def(file_content_line[syntax_index]) or is_normal_line(file_content_line[syntax_index])
@@ -140,72 +139,105 @@ def is_unindented_insertable(file_content_line, syntax_index):
 
 
 def analyze_python_file(file_contents_lines, lines_numbers):
+    """
+    Scour the changed files to check if the trace call can be insered on the changed lines.
+    
+    Oversimplified cases :
+    case 1: If the changed line is an unindented line, check is_unindented_insertable() four cases
+                    
+    case 2: If the changed line is a function def (see regexes above), the trace call can
+            be inserted at the next line.
+            In reality, it may be more complicated, because function def can be multi-lined ...
+    
+    case 3: If changed line is in non-definition code, scour the previous lines.
+            The trace call would be inserted directly after the changed line,
+            so the Python syntax shall be carefully respected by looking at the indentation
+            stack (priority_indentation) of the previous lines.
+    
+    returns a (int; boolean) tuple list of (line_number; is_insertable)
+    
+    parameters:
+        changed files' lines and changed lines number
+    """
+    
+    
     # vars definitions
     are_insertable_lines = []
       
     # file_contents_lines : The text of each modified line
-    # 2D list : fichier, lignes de code
-    # est une liste de lignes de string (après splitlines)
+    # 2D list : first dimension=files, second=lines of code
+    # is a list of string lines (after splitlines)
     
     # for each changed file, get changed lines numbers
     for file_content_line in file_contents_lines:
-        # for each changed line
+        # for each changed line number
         for line_number in lines_numbers:
             
             # indexes definition
             line_index = line_number # index for debugging. Is exact number of the line
             syntax_index = line_number - 1 # start point of analysis. Is line_number - 1 because of list access (start at 0)
-            print("BEGIN ANALYSIS")
-            print("syntax_index : ", syntax_index, "\n line changed : ", line_number, " - ", file_content_line[syntax_index])
+            print("\n BEGIN ANALYSIS")
+            print("line changed (", line_number, ") : ", file_content_line[syntax_index])
             
             # first regex test, similar to greedy algorithm.            
             # if already matched, then changed line is a function def
-            # TODO case 2 : insert trace call under function def
             
-            # soit on parcourt vers le bas. soit c'est ligne non identée soit c'est rien. rien = ligne vide, comment ou fin de file
+            # Either soit on parcourt vers le bas. soit c'est ligne non identée soit c'est rien. rien = ligne vide, comment ou fin de file
+            
+            # case 1: If the changed line is an unindented line
             if get_indentation_level(file_content_line[syntax_index]) == 0:
                 if is_unindented_insertable(file_content_line, syntax_index):
                     are_insertable_lines.append(tuple((line_number, True)))
-                    print("changed line is a unindented line")
-                    print(are_insertable_lines)
+                    print("changed line is a insertable unindented line")
                 else:
                     print("insertion is impossible here")
+                    
+            # case 2: If the changed line is a function def (see regexes above)
+            # In reality, it may be more complicated, because function def can be multi-lined ...
             elif is_function_def(file_content_line[syntax_index]):
                 are_insterable_lines.append(tuple((line_number, True)))
                 print("changed line is a python function def")
+              
+            # case 3: check if changed line is in non-definition code
+            # Scour the previous lines. The trace call would be inserted directly after the changed line,
+            # so the Python syntax shall be carefully respected by looking at the indentation
+            # stack (priority_indentation) of the previous lines.
             else:
                 # TODO remove is_normal_line by should_continue or smt
                 # reason why : we check if def line, it's not, check if normal line, it is, then we continue while loop
                 # weird ?
+                
+                # Saves the lowest identation level (lowest number of leading spaces)
                 priority_indentation = get_indentation_level(file_content_line[syntax_index])
                 has_found_def = False
-                while 0 <= syntax_index and not has_found_def: # & syntax_index != in lines_numbers
+                
+                # loop until beginning of file or def found (see regex above)
+                while 0 <= syntax_index and not has_found_def: # and syntax_index != in lines_numbers
                     
                     # go to previous lines (decreasing order of lines number) until a function definition is reached
                     line_index -= 1
                     syntax_index -= 1
     
-                    if is_function_def(file_content_line[syntax_index]):
-                        def_indentation = get_indentation_level(file_content_line[syntax_index])
-                        print(def_indentation, priority_indentation, "at", line_index)
-                        if def_indentation < priority_indentation:
-                            print("FUNCTION DEF FOUND at line ", line_index, " :")
-                            print(find_function_matches(file_content_line[syntax_index]))
-                            are_insertable_lines.append(tuple((line_number, True)))
-                            has_found_def = True
+                    # case 3.1: if previous line is a def and if the def line is correctly indented
+                    if is_function_def(file_content_line[syntax_index]) and get_indentation_level(file_content_line[syntax_index]) < priority_indentation:
+                        # the changed line is in a non-definition code block, and the line is insertable
+                        print("higher function def found at line ", line_index, " :")
+                        print(find_function_matches(file_content_line[syntax_index]))
+                        are_insertable_lines.append(tuple((line_number, True)))
+                        has_found_def = True
+                        
+                    # case 3.2: if previous line is a normal line and not an empty line
                     elif is_normal_line(file_content_line[syntax_index]) and not is_empty_line(file_content_line[syntax_index]):
-                        # check tabulation
+                        # no concluant result. Check if Python indentation is respected
+                        # and remember the lowest indentation level. Keep looking backwards
                         current_indentation = get_indentation_level(file_content_line[syntax_index])
                         if current_indentation < priority_indentation:
                             priority_indentation = current_indentation
-                            print(priority_indentation, "at", line_index)
                             
-                if has_found_def:
-                    print("insertion is possible at these lines : ")
-                    print(are_insertable_lines)
-                    
-                else:
+                if not has_found_def:
                     print("insertion is impossible here")
+                    
+    print(are_insertable_lines)
                 
 def insertTraceCpp(traced_file_contents_lines, lines_numbers, trace_call_Cpp):
     """
