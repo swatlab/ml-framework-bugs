@@ -42,6 +42,7 @@ def commandFilepaths(commit_command):
 
     """
     os.chdir("../..")
+    # TODO adapt path towards desired framework Github repo
     os.chdir("pytorch")
     result_filenames = subprocess.run(['git', 'diff', "--name-only", commit_command], stdout=subprocess.PIPE)
     filenames = result_filenames.stdout.decode("utf-8")
