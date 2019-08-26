@@ -11,6 +11,32 @@ from dotenv import load_dotenv
 BASE_ISSUES_DIR = Path("data/issues/")
 
 
+def get_max_pages_from_header(header):
+    """
+    Parses the header of a request result to obtain the number of issues pages
+    
+    parameters: the request result's header
+    """
+    from urllib.parse import urlparse, parse_qs
+    link_header = header.get("Link")
+    
+    if link_header is None:
+        return None
+    
+    # separate the header into fields
+    # iterate through all fields to find the last page using the keyword 'rel="last"'
+    pages = header["Link"].split(",")
+    last_page = next((x for x in pages if 'rel="last"' in x))
+    
+    # clean up the uri of the last page (remove “;”, “<” and “>”)
+    last_page_uri = last_page.split(";")[0].strip().lstrip("<").rstrip(">")
+    
+	# parse the uri to get the last page
+    last_page_number = int(parse_qs(urlparse(last_page_uri).query)["page"][0])
+    
+    return last_page_number
+
+
 def get_issues(framw_row, label = None):
     """
     For one framework, checks if labels are needed then makes requests.
@@ -34,6 +60,7 @@ def get_issues(framw_row, label = None):
     resp = requests.get(issues_uri, params = params)
     js_resp = resp.json()
     max_pages = get_max_pages_from_header(resp.headers)
+    
     print("max pages : ", max_pages)
     
     # If no pages are returned by the Link header
@@ -65,25 +92,13 @@ def get_issues(framw_row, label = None):
     return responses
 
 
-def get_max_pages_from_header(header):
-    from urllib.parse import urlparse, parse_qs
-    link_header = header.get("Link")
-    if link_header is None:
-        return None
-    pages = header["Link"].split(",")
-    last_page = next((x for x in pages if 'rel="last"' in x))
-    last_page_uri = last_page.split(";")[0].strip().lstrip("<").rstrip(">")
-    last_page_number = int(parse_qs(urlparse(last_page_uri).query)["page"][0])
-    return last_page_number
-
-
-"""
-Removes OS unsafe characters ":" and "/" in the label name
-
-parameters:
-    label : litteral label name as used in issues repo
-"""
 def clean_issue_label_name(label):
+    """
+    Removes OS unsafe characters ":" and "/" in the label name
+    
+    parameters:
+        label : litteral label name as used in issues repo
+    """
     return label.replace(":", "_").replace("/", "_")
 
 
