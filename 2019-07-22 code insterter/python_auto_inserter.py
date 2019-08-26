@@ -14,7 +14,13 @@ import os
 import re
 import subprocess
 import sys
+
+
 def getFileContents(filepaths):
+    """
+    Open manually selected python files
+    returns a 1d list, one element for each python file
+    """
     file_contents = []
     for filepath in filepaths:
         file = open(filepath,"r") 
@@ -24,71 +30,108 @@ def getFileContents(filepaths):
     return file_contents
 
 def splitFileContents(file_contents):
+    """
+    splits files content in lines
+    returns a 2d list, one element for each python file, then one element for each line of file
+    """
     file_contents_lines = []
     for file_content in file_contents:
         file_contents_lines.append(file_content.splitlines())
     return file_contents_lines
 
-# later for other regexes
-    # empty_line_reg = r"^\s*$"
-    # unindented_line_reg = r"^\S.+"
-    # empty_line_match = re.findall(empty_line_reg, test_str, re.MULTILINE)
-    # unindented_line_match = re.findall(unindented_line_reg, test_str, re.MULTILINE)
-
 def is_function_def(test_str):
+    """
+    matches a def, an if, ... or a while in the test_str (one line of code)
+    returns true if there is only one match
+    """
+    # the def regex is different to handle multi-line def 
     regex = r"(def \w+\(.*|if .+:|elif .+:|else.+:|try:|except \w+:|for .+:|while .+:)"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 1
 
 def is_normal_line(test_str):
+    """
+    matches a def, an if, ... or a while in the test_str (one line of code)
+    returns true if there is no match (the line is a normal code line)
+    """
+    # the def regex is different to handle multi-line def 
     regex = r"(def \w+\(.*|if .+:|elif .+:|else.+:|try:|except \w+:|for .+:|while .+:)"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 0
 
 def is_empty_line(test_str):
+    """
+    matches a empty character or a comment in the test_str (one line of code)
+    returns true if there is only one match
+    """
+    # the def regex is different to handle multi-line def 
     empty_line_regex = r"^\s*$|#"
     empty_line_match = re.findall(empty_line_regex, test_str, re.MULTILINE)
     return len(empty_line_match) == 1
 
-# find the litteral value found for printing
 def find_function_matches(test_str):
+    """
+    matches a def, an if, ... or a while in the test_str (one line of code)
+    returns the litteral value found for printing
+    """
     regex = r"(def \w+\(.*|if .+:|elif .+:|else.+:|try:|except \w+:|for .+:|while .+:)"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return function_matches
 
 # https://stackoverflow.com/a/13649013/9876427
 def get_indentation_level(string):
+    """
+    returns the number of leading spaces in string (one line of code)
+    """
     return len(string) - len(string.lstrip(" "))
 
 
 
 
 def is_unindented_insertable(file_content_line, syntax_index):
+    """
+    Check if the file_content_line[syntax_index] line is an insertable line.
+    
+    an unindented line is insertable if the the code block is a running code (non-definition code).
+    General rule : if the line after is also unindented (and a def or normal line), the line is insertable. The reason is that 
+    it doesn't not break in a function def, for example. However, not all cases are covered.
+    
+    I tried to cover most cases in my code. I oversimplified unindented lines in four cases. 
+    
+    returns Ture if the line is insertable, else False
+    """
     need_continue = True
     insertable = False
-    print("mode parcourir", syntax_index + 1, len(file_content_line))
+    print("scour unindented mode from", syntax_index + 1, len(file_content_line))
     syntax_index += 1
     while syntax_index < len(file_content_line) and need_continue:
         syntax_index += 1
         
-        print("mode parcourir", syntax_index + 1, len(file_content_line))
-        #line non indentée (normale ou def) arrêt concluant true
+        print("scour mode", syntax_index + 1, len(file_content_line))
+        
+        # if a next line is unindented (normal or def) concluant result, True
         is_concluant_line = is_function_def(file_content_line[syntax_index]) or is_normal_line(file_content_line[syntax_index])
+        
+        # if the next line breaks the General rule
         if get_indentation_level(file_content_line[syntax_index]) != 0:
             need_continue = False
             insertable= False
+        # if the next line respects the General rule
         elif get_indentation_level(file_content_line[syntax_index]) == 0 and is_concluant_line:
-            print("ok bloc non-indenté")
+            print("ok, unindented code block")
             need_continue = False
             insertable= True
-        #ligne vide, comment,  = continue pas concluant
+        # if empty line or comment, shall continue, because the result is not concluant
         elif is_empty_line(file_content_line[syntax_index]):
             need_continue = True
             insertable = False
+        # a line at the end of a code line does never break the General rule. For instance, result is concluant
         elif syntax_index == len(file_content_line):
             need_continue = False
             insertable= True
-            
+    
+    # check one last time. (needed because of syntax_index out of range ....... it's bad)
+    # TODO avoid code duplication. 
     if syntax_index == len(file_content_line):
         need_continue = False
         insertable= True
@@ -100,7 +143,7 @@ def analyze_python_file(file_contents_lines, lines_numbers):
     # vars definitions
     are_insertable_lines = []
       
-    # file_contents_lines : le texte de chaque fichier modifié.
+    # file_contents_lines : The text of each modified line
     # 2D list : fichier, lignes de code
     # est une liste de lignes de string (après splitlines)
     
@@ -165,8 +208,14 @@ def analyze_python_file(file_contents_lines, lines_numbers):
                     print("insertion is impossible here")
                 
 def insertTraceCpp(traced_file_contents_lines, lines_numbers, trace_call_Cpp):
+    """
+    goes through the traced_file_contents_lines (copy of file_contents_lines) and add
+    trace calls at the lines_numbers
+    returns the inserted traced_file_contents_lines
+    """
     for traced_file_content_line, line_number in zip(traced_file_contents_lines, lines_numbers):
-        # ajout de trace_call sur liste inversée pour conserver le numéro de ligne
+        # adding of tracer.trace call on a inverted list to conserve the lines numbers (you add at the end so 
+        # lines numbers aren't shifted)
         [traced_file_content_line.insert(n, trace_call_Cpp) for n in line_number[::-1]]
     return traced_file_contents_lines
                 
@@ -176,7 +225,7 @@ if __name__ == '__main__':
     filepaths = []
     lines_numbers = []
     filepaths.append("./test_dataloader.py")
-    # lines_numbers : 2D list ?
+    # lines_numbers is a 2D list.
     lines_numbers.append(373)
     lines_numbers.append(376)
     lines_numbers.append(1720)
