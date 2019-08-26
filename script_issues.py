@@ -15,6 +15,9 @@ def get_max_pages_from_header(header):
     """
     Parses the header of a request result to obtain the number of issues pages
     
+    return :
+        number of max page (int)
+    
     parameters: the request result's header
     """
     from urllib.parse import urlparse, parse_qs
@@ -41,6 +44,9 @@ def get_issues(framw_row, label = None):
     """
     For one framework, checks if labels are needed then makes requests.
     Uses a incremental page number to get all the requests.
+    
+    return :
+        json result of all requests
     
     parameters :
         framw_row : a row in the frameworks csv
@@ -96,6 +102,9 @@ def clean_issue_label_name(label):
     """
     Removes OS unsafe characters ":" and "/" in the label name
     
+    return :
+        cleaned name
+    
     parameters:
         label : litteral label name as used in issues repo
     """
@@ -103,17 +112,33 @@ def clean_issue_label_name(label):
 
 
 def main():
+    """
+    Uses the frameworks' information in framework_dataframe.csv to request the issues.
+    Then, save requests results in json files.
+    """
+    # Used to specify the wanted label(s) for the specified frameworks.
     framework_label_mapping = {}# "TensorFlow": ["type:bug/performance", "prtype:bugfix"] }
+    # Each line is composed of the respective name, Github link, bug repo link, 
+    # website URI and API URI of each framework.
     framework_df = pd.read_csv("framework_dataframe.csv")
     
     BASE_ISSUES_DIR.mkdir(parents=True, exist_ok=True)
+    
+    #Iterate through all frameworks’ info (all csv rows)
     for i, row in framework_df.iterrows():
+        
+        # get framework name and labels in csv
         framw_name = row['framework']
         label_names = framework_label_mapping.get(framw_name, [None])
         print(framw_name)
+        
+		# Iterate through all wanted labels
         for label in label_names:
+            
+            # make requests for issues, issues_for_label is json content
             issues_for_label = get_issues(row, label=label)
             
+            # if there is a label, add label name in the filename
             if label:
                 safe_label_name = clean_issue_label_name(label)
                 label_names = framework_label_mapping.get(framw_name, [None])
@@ -121,6 +146,7 @@ def main():
             else:
                 filename = '{}_issues.json'.format(row['framework'])
             
+            # save json content in json file
             with open(BASE_ISSUES_DIR / filename, 'w') as f:
                 json.dump(issues_for_label, f)
 
