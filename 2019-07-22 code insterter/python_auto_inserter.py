@@ -163,10 +163,6 @@ def analyze_python_file(file_contents_lines, lines_numbers):
     
     # vars definitions
     are_insertable_lines = []
-      
-    # file_contents_lines : The text of each modified line
-    # 2D list : first dimension=files, second=lines of code
-    # is a list of string lines (after splitlines)
     
     # for each changed file, get changed lines numbers
     for file_content_line in file_contents_lines:
@@ -181,8 +177,6 @@ def analyze_python_file(file_contents_lines, lines_numbers):
             
             # first regex test, similar to greedy algorithm.            
             # if already matched, then changed line is a function def
-            
-            # Either soit on parcourt vers le bas. soit c'est ligne non identée soit c'est rien. rien = ligne vide, comment ou fin de file
             
             # case 1: If the changed line is an unindented line
             if get_indentation_level(file_content_line[syntax_index]) == 0:
@@ -202,11 +196,7 @@ def analyze_python_file(file_contents_lines, lines_numbers):
             # Scour the previous lines. The trace call would be inserted directly after the changed line,
             # so the Python syntax shall be carefully respected by looking at the indentation
             # stack (priority_indentation) of the previous lines.
-            else:
-                # TODO remove is_normal_line by should_continue or smt
-                # reason why : we check if def line, it's not, check if normal line, it is, then we continue while loop
-                # weird ?
-                
+            else:                
                 # Saves the lowest identation level (lowest number of leading spaces)
                 priority_indentation = get_indentation_level(file_content_line[syntax_index])
                 has_found_def = False
