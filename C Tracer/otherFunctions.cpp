@@ -2,6 +2,7 @@
 #include "otherFunctions.h" 
 #include "SourceCodeTracer.h"
 
+// continuation of SourceCodeTracer example in main.cpp
 void someMachineLearningBuggedCode()
 {
 	extern SourceCodeTracer SOURCE_CODE_TRACER;
