@@ -76,8 +76,16 @@ def get_max_pages_from_header(header):
     last_page_number = int(parse_qs(urlparse(last_page_uri).query)["page"][0])
     return last_page_number
 
+
+"""
+Removes OS unsafe characters ":" and "/" in the label name
+
+parameters:
+    label : litteral label name as used in issues repo
+"""
 def clean_issue_label_name(label):
     return label.replace(":", "_").replace("/", "_")
+
 
 def main():
     framework_label_mapping = {}# "TensorFlow": ["type:bug/performance", "prtype:bugfix"] }
