@@ -22,6 +22,17 @@ request_uri = {}
 CLOSED_ISSUES_COMMENTS_JSON_DIR = Path('data/closed_issues/comments/json/')
 
 def wait_for_time_and_continue(resp):
+    """
+    Checks if the X-RateLimit-Remaining is all spent. If it is, rest until it is restored
+    (time until reset, else on hour)
+    
+    returns :
+        True if waited
+        False else
+    
+    parameters :
+        resp : the request response
+    """
     remaining_requests = int(resp.headers.get('X-RateLimit-Remaining', -1))
     # Retry if the header is not present for whatever reason
     if remaining_requests == -1:
@@ -148,22 +159,51 @@ def get_comments(base_request_params, request_auth, use_request_session=False):
             json.dump(framework_comments, f)
 
 def get_next_url_from_header(header):
+    """
+    Parses a header to obtain the next page of comments' URL
+    
+    returns :
+        None if header or next page is empty
+        Max pages if success
+    parameters :
+        header : the response header
+    """
     from urllib.parse import urlparse, parse_qs
     link_header = header.get("Link")
+    
+    # check if empty
     if link_header is None:
         return None
+    
+    # split header in fields and parse
     pages = header["Link"].split(",")
     next_page = next((x for x in pages if 'rel="next"' in x), None)
+    
     if next_page is None:
         return None
+    
+    # clean un the max pages field to obtain the value
     next_page_uri = next_page.split(";")[0].strip().lstrip("<").rstrip(">")
     return next_page_uri
 
 def get_max_pages_from_header(header):
+    """
+    Parses a header to obtain the max pages of comments
+    
+    returns :
+        None if header is link empty
+        Max pages if success
+    parameters :
+        header : the response header
+    """
     from urllib.parse import urlparse, parse_qs
     link_header = header.get("Link")
+    
+    # check if empty
     if link_header is None:
         return None
+    
+    # split header in fields and parse
     pages = header["Link"].split(",")
     try:
         last_page = next((x for x in pages if 'rel="last"' in x))
@@ -172,12 +212,20 @@ def get_max_pages_from_header(header):
         print(link_header)
         print(pages)
         raise sie
+        
+    # clean un the max pages field to obtain the value
     last_page_uri = last_page.split(";")[0].strip().lstrip("<").rstrip(">")
     last_page_number = int(parse_qs(urlparse(last_page_uri).query)["page"][0])
+    
     return last_page_number
 
 
 def write_closed_issues_comments_to_csv(json_issues_path=CLOSED_ISSUES_COMMENTS_JSON_DIR):
+    """
+    Load the json generated in if name==main and write their content in a csv.
+    This method keeps the closed issues comments, because 
+    """
+    
     CLOSED_ISSUES_COMMENTS_CSV_DIR = Path('data/closed_issues/comments/csv/')
     CLOSED_ISSUES_COMMENTS_CSV_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -185,22 +233,27 @@ def write_closed_issues_comments_to_csv(json_issues_path=CLOSED_ISSUES_COMMENTS_
         with open(jf, 'r') as f:
             json_obj = json.load(f)
 
+        # Save json in csv directly
         if isinstance(json_obj, dict):
             _df = pd.DataFrame.from_dict(json_obj, orient='index')
             _df.transpose()
             _df.to_csv(CLOSED_ISSUES_COMMENTS_CSV_DIR /
                        '{}.csv'.format(jf.stem), index=False)
+            
+        # If extraction was a list of list (backwards compatibility)
         elif isinstance(json_obj[0], list):
-            # If extraction was a list of list (backwards compatibility)
+            # flatten
             flattened = [x for i in json_obj for x in i]
-            # Dump to string for pandas to read (only accepts str or paths)
+            # Dump to string and save in csv
             flattened_json_string = json.dumps(flattened)
             _df = pd.read_json(flattened_json_string)
             _df.to_csv(CLOSED_ISSUES_COMMENTS_CSV_DIR /
                        '{}.csv'.format(jf.stem), index=False)
+            
+        # Else, it is already flattened
         else:
             flattened = json_obj
-            # Dump to string for pandas to read (only accepts str or paths)
+            # Dump to string and save in csv
             flattened_json_string = json.dumps(flattened)
             _df = pd.read_json(flattened_json_string)
             _df.to_csv(CLOSED_ISSUES_COMMENTS_CSV_DIR /
@@ -208,6 +261,9 @@ def write_closed_issues_comments_to_csv(json_issues_path=CLOSED_ISSUES_COMMENTS_
 
 
 def _make_base_params():
+    """
+    Gets the client id and client secret in the command line arguments
+    """
     if ARGS.use_pat:
         return {"per_page": 100}
     else:
@@ -221,6 +277,9 @@ def _make_base_params():
 
 
 def _make_auth_params():
+    """
+    Gets the client user and client access token in the command line arguments
+    """
     if ARGS.use_pat:
         CLIENT_USER = os.getenv('GITHUB_PERSONAL_ACCESS_USER', "")
         CLIENT_PAT = os.getenv('GITHUB_PERSONAL_ACCESS_TOKEN', "")
