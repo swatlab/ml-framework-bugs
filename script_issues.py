@@ -113,7 +113,8 @@ def clean_issue_label_name(label):
 
 def main():
     """
-    Uses the frameworks' information in framework_dataframe.csv to request the issues.
+    Uses the frameworks' information in framework_dataframe.csv to request the issues with or 
+    without issue label.
     Then, save requests results in json files.
     """
     # Used to specify the wanted label(s) for the specified frameworks.
@@ -151,20 +152,33 @@ def main():
                 json.dump(issues_for_label, f)
 
 def write_closed_issues_to_csv(json_issues_path=BASE_ISSUES_DIR):
+    """
+    Load the json generated in main() and write their content in a csv.
+    This method keeps the closed issues and doesn't write the open issues
+    """
     CLOSED_ISSUES_DIR = Path('data/closed_issues/')
     CLOSED_ISSUES_DIR.mkdir(parents=True, exist_ok=True)
-
+    
+    # Iterate through all json files in json_issues_path
     for jf in Path.glob(json_issues_path, pattern='*.json'):
+        
+        # Open and load json
         with open(jf, 'r') as f:
             json_obj = json.load(f)
+            
+        
+        # If extraction was a list of list (backwards compatibility)
         if isinstance(json_obj[0], list):
-            # If extraction was a list of list (backwards compatibility)
             flattened = [x for i in json_obj for x in i]
+        # Else, it is already flattened
         else:
             flattened = json_obj
         flattened_json_string = json.dumps(flattened) # Dump to string for pandas to read (only accepts str or paths)
-
+        
+        # Dump all json in a string
         _df = pd.read_json(flattened_json_string)
+        
+        # Only select issues that are closed and save them in a csv
         _df = _df[_df['state']=='closed']
         _df.to_csv(CLOSED_ISSUES_DIR / '{}.csv'.format(jf.stem), index=False)
 
