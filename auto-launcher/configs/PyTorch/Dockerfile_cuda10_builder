@@ -27,8 +27,7 @@ WORKDIR /opt/pytorch
 
 RUN conda init bash 
 
-COPY installer.sh .
-RUN chmod +x installer.sh
-COPY commits.txt .
+COPY build.sh .
+RUN chmod +x build.sh
 
-
+ENTRYPOINT "/opt/pytorch/build.sh"
