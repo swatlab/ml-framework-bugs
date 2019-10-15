@@ -1,0 +1,7 @@
+$ py python_inserter.py efc3d6b65
+new_file1.py  is written.
+new_file2.py  is written.
+Original file patched lines :
+ [[12, 95, 190, 216, 236, 380], [1388]]
+Trace.trace() is inserted at these lines :
+ [12, 96, 192, 219, 240, 385] [1388]

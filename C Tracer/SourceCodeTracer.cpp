@@ -1,10 +1,13 @@
 #include "stdafx.h"
 #include "SourceCodeTracer.h"
 
+// allows the tracer singleton to be accessible in other files
 //extern SourceCodeTracer sourceCodeTracer = SourceCodeTracer::getInstance();
 SourceCodeTracer* SourceCodeTracer::_singleton = NULL;
 extern SourceCodeTracer SOURCE_CODE_TRACER = SourceCodeTracer::getInstance();
 
+// destruct the tracer object and write the map containing the 
+// number of trace calls in a file.
 SourceCodeTracer::~SourceCodeTracer() {
 	// TODO: Write into 
 	std::cout << "Destructing object" << std::endl;
@@ -25,6 +28,7 @@ SourceCodeTracer::~SourceCodeTracer() {
 	traceOutputFile.close();
 }
 
+// get the singleton instance of the tracer, if it exists
 SourceCodeTracer & SourceCodeTracer::getInstance() {
 	if (SourceCodeTracer::_singleton == nullptr) {
 		std::cout << "Constructing object" << std::endl;
@@ -33,10 +37,12 @@ SourceCodeTracer & SourceCodeTracer::getInstance() {
 	return *SourceCodeTracer::_singleton;
 }
 
+// counts, in a map, the number of times a trace call is used
 void SourceCodeTracer::trace(const string & tr) {
 	_map[tr] = _map[tr] + 1;
 }
 
+// construct tracer and assign trace output file
 SourceCodeTracer::SourceCodeTracer() {
 	_filePath = "trace.txt"; //get_env_var("TRACER_OUTPUT_FILE_PATH");
 	std::cout << "Got environment value for TRACER_OUTPUT_FILE_PATH of " << _filePath << std::endl;
@@ -49,7 +55,7 @@ SourceCodeTracer::SourceCodeTracer() {
 }
 
 // https://stackoverflow.com/q/631664/9876427
-
+// get the environment variable from the name in parameter
 std::string SourceCodeTracer::get_env_var(std::string const & key) const {
 	char * val;
 	val = std::getenv(key.c_str());

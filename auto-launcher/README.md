@@ -52,7 +52,7 @@ You can put this into your shell init file to allow quicker access. Ex: if using
 
 ## Building base docker container
 Let's take the example of PyTorch. We will create a docker image with the proper dependencies with the following command:
-`sudo docker build --tag pytorch90builder --file configs/PyTorch/Dockerfile_cuda90_builder build_contexts/pytorch/`
+`sudo docker build --tag emiliorivera/ml-frameworks:pytorch100builder --file configs/PyTorch/Dockerfile_cuda100_builder build_contexts/pytorch/`
 The `--tag` is whatever tag you'd like (but make sure that when you run the container it is the proper name)
 The second argument is the build context.
 
@@ -63,11 +63,13 @@ We want our container to have access to nvidia-devices so we run with the follow
 1. `-e NVIDIA_REQUIRE_CUDA="cuda>=9.0"` also sets an environment variable telling nvidia to use a version greater than what is requested. While one can specify a specific version (=), that one needs to be available on the host by some mechanism.
 1. `-e NVIDIA_DRIVER_CAPABILITIES="compute,utility"` are the features to be enabled within the container. For our use, we only want access to CUDA compute capabilties
 1. `--mount source=build-vol,target=/builds` tells our container to mount on /builds (in its filesystem) volume created by docker with name `build-vol`. This is used to store completed builds (*.whl) in order to store them on the host machine (since the volume is actually a path existing on the host).
+1. `--env COMMIT=<COMMIT_SHA>` to specify the version to checkout.
 1. `-it` launches an interactive session (`-i`) and a pseudo-tty (`t`)
 1. Finally, the last argument we provided here is the base image.
 
-Continuing with the PyTorch example:
-`sudo docker run --name pytorch90 --rm --mount source=build-vol,target=/builds --runtime=nvidia -e NVIDIA_DEVICES=all -e NVIDIA_REQUIRE_CUDA="cuda>=9.0" -e NVIDIA_DRIVER_CAPABILITIES="compute,utility" --name pytorch_builder -it pytorch90builder:latest`
+Continuing with the PyTorch example, substitute `--env COMMIT=<>` to use the actual commit SHA:
+`sudo docker run --name pytorch90 --rm --mount source=build-vol,target=/builds --runtime=nvidia -e NVIDIA_DEVICES=all -e NVIDIA_REQUIRE_CUDA="cuda>=9.0" -e NVIDIA_DRIVER_CAPABILITIES="compute,utility" --name pytorch_builder --env COMMIT=7e2ec24886 -it emiliorivera/ml-frameworks:pytorch100builder`
+or depending on `nvidia-container-runtime` version:
+`sudo docker run --name pytorch100 --rm --mount source=build-vol,target=/builds --gpus all --name pytorch_builder --env COMMIT=7e2ec24886 -it emiliorivera/ml-frameworks:pytorch100builder`
 
-## Building
-We use anaconda to manage dependencies. Notably, we have created an environment called `build`. So before building, run `conda activate build` so building depedencies are correctly loaded. Afterwards you can the the script found in `/opt/some/path/installer.sh` to build correctly the python wheels (`.whl`)
+Build is automatically triggered as the container is started. See file `build_contexts/pytorch/build.sh` for the script being executed.
