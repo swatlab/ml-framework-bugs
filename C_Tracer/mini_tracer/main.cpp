@@ -33,14 +33,12 @@ int main() {
     // breakpoint, with gdb
     // std::raise(SIGINT);
 
-    std::cout << "TRACE WAS CALLED" << std::endl;
-    // TODO use env var for filename
+    std::cout << "TRACER WAS CALLED" << std::endl;
     const char* traceLogPath = "/results/tracelog_(exp)_(evType)_" + getenv("MODEL_NAME") + ".txt";
     std::ofstream mlBugLog;
 
     mlBugLog.open(traceLogPath, std::ios::app);
-    // TODO specify model
-    mlBugLog << "(file) LINE (nb) called : (code)" << std::endl;
+    mlBugLog << getenv("MODEL_NAME") + "in (file) line (nb) called : (code)" << std::endl;
     mlBugLog.close();
 
 	return 0;

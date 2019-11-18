@@ -7,9 +7,9 @@
 # print(os.path.dirname(os.path.realpath(__file__)))
 # pdb.set_trace()
 import os
-print("under set_trace")
+print("TRACER WAS CALLED")
 with open("/results/tracelog_(exp)_(evType)_" + os.environ['MODEL_NAME'] + ".txt", "a") as myfile:
-    myfile.write("(file_name) line (line_number) called : code at that line \n")
+    myfile.write(os.environ['MODEL_NAME'] + "in (file) line (nb) called : (code) \n")
 
 
 print("WRITING TRACE")
