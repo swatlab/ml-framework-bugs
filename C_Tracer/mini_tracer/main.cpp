@@ -20,6 +20,8 @@
 #include <cstdlib>
 #include <stdlib.h>
 
+#include <string>
+
 int main() {
 
     // char cwd[PATH_MAX];
@@ -34,11 +36,12 @@ int main() {
     // std::raise(SIGINT);
 
     std::cout << "TRACER WAS CALLED" << std::endl;
-    const char* traceLogPath = "/results/tracelog_(exp)_(evType)_" + getenv("MODEL_NAME") + ".txt";
+    std::string traceLogPath = "results/tracelog_(exp)_(evType)_" + std::string(getenv("MODEL_NAME")) + ".txt";
     std::ofstream mlBugLog;
 
     mlBugLog.open(traceLogPath, std::ios::app);
-    mlBugLog << getenv("MODEL_NAME") + "in (file) line (nb) called : (code)" << std::endl;
+    std::string modelName = std::string(getenv("MODEL_NAME")) + " in (file) line (nb) called : (code)";
+    mlBugLog << modelName << std::endl;
     mlBugLog.close();
 
 	return 0;
