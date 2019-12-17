@@ -5,6 +5,7 @@ Created on Mon Jul 22 14:06:21 2019
 @author: kevin
 """
 
+#from python_inserter_copy import printsmt
 import argparse
 import copy
 import os
@@ -207,7 +208,7 @@ def analyze_python_file(file_contents_lines, lines_numbers):
 if __name__ == '__main__':
     commit_command = getVersionArguments()
     
-    # obtenir fichiers à tracer
+    # get files to trace obtenir fichiers à tracer
     filenames = commandFilepaths(commit_command)
     filepaths = filenames.splitlines()
     
