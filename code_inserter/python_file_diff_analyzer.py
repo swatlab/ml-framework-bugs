@@ -13,8 +13,8 @@ import re
 import subprocess
 import sys
 
-class Diffdoer:
-	def executePatchfileCommand(commit_command):
+class DiffAnalysisDoer:
+	def executePatchfileCommand(self, commit_command):
 		"""
 		Moves into the framework local Github repo, create commit patchfile and
 		use splitPatchfile to split the lines of patchfile
@@ -32,7 +32,7 @@ class Diffdoer:
 		
 		return split_patchfile
 
-	def splitPatchfile(patchfile):
+	def splitPatchfile(self, patchfile):
 		"""
 		separate the patchfile in one patchfile for each file changed
 		returns a 1D list of patchfiles
@@ -40,7 +40,7 @@ class Diffdoer:
 		split_patchfile = patchfile.split('diff --git')
 		return split_patchfile
 
-	def findChangedLines(split_patch):
+	def findChangedLines(self, split_patch):
 		"""
 		parses the split_patch (of one file at time) to obtain changed lines for each file
 		
@@ -55,7 +55,7 @@ class Diffdoer:
 			line_numbers.append(int(match.group(1)))
 		return line_numbers
 
-	def findChangedLinesPerFile(split_patchfile):
+	def findChangedLinesPerFile(self, split_patchfile):
 		"""
 		Go through the split_patchfile and get find the changed lines (of one file at time)
 		"""
