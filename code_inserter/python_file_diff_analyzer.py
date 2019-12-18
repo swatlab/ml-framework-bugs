@@ -28,7 +28,7 @@ class DiffAnalysisDoer:
 		result_patchfile = subprocess.run(['git', 'diff', commit_command], stdout=subprocess.PIPE)
 		patchfile = result_patchfile.stdout.decode("utf-8")
 		
-		split_patchfile = splitPatchfile(patchfile)
+		split_patchfile = self.splitPatchfile(patchfile)
 		
 		return split_patchfile
 
@@ -40,9 +40,19 @@ class DiffAnalysisDoer:
 		split_patchfile = patchfile.split('diff --git')
 		return split_patchfile
 
+	def findChangedLinesPerFile(self, split_patchfile):
+		"""
+		Go through the split_patchfile and get find the changed lines (of one file at time)
+		"""
+		lines_numbers = []
+		for split_patch in split_patchfile:
+			lines_numbers.append(self.findChangedLines(split_patch))
+		return lines_numbers
+		
 	def findChangedLines(self, split_patch):
 		"""
-		parses the split_patch (of one file at time) to obtain changed lines for each file
+		[SUB-FUNCTION] of findChangedLinesPerFile(). Parses the split_patch
+		(of one file at time) to obtain changed lines for each file
 		
 		return changed lines for each file 
 		"""
@@ -54,15 +64,6 @@ class DiffAnalysisDoer:
 			# print(int(match.group(1))) # debug which lines are modified
 			line_numbers.append(int(match.group(1)))
 		return line_numbers
-
-	def findChangedLinesPerFile(self, split_patchfile):
-		"""
-		Go through the split_patchfile and get find the changed lines (of one file at time)
-		"""
-		lines_numbers = []
-		for split_patch in split_patchfile:
-			lines_numbers.append(findChangedLines(split_patch))
-		return lines_numbers
 
 if __name__ == '__main__':
 	differ = Diffdoer()
