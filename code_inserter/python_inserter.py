@@ -6,6 +6,7 @@ Created on Mon Jul 22 14:06:21 2019
 """
 
 from python_file_analyzer import FileAnalyzer
+from python_debug import PythonDebug
 from python_file_diff import DiffDoer
 from python_file_diff_analyzer import DiffAnalysisDoer
 from python_file_opener import FileOpener
@@ -219,40 +220,40 @@ if __name__ == '__main__':
     inserter = Inserter()
     commit_command = inserter.diffDoer.getAndFormatCommitNumber()
     
-    # get files to trace obtenir fichiers à tracer
-    filenames = commandFilepaths(commit_command)
+    # get files to trace
+    filenames = inserter.diffDoer.executeChangedFilesPathsDiff(commit_command)
     filepaths = filenames.splitlines()
     
     # le texte de chaque fichier modifié 
     # est une liste de strings (après read fichier)
-    file_contents = getFileContents(filepaths)
+    file_contents = inserter.opener.getFileContents(filepaths)
     
     # le texte de chaque fichier modifié.
     # 2D list : fichier, lignes de code
     # est une liste de lignes de string (après splitlines)
-    file_contents_lines = splitFileContents(file_contents)
+    file_contents_lines = inserter.opener.splitFileContents(file_contents)
     
     # obtenir patch -pour chaque fichier séparément-
-    split_patchfile = commandPatchfile(commit_command) # est une liste de strings (après split diff --git)
-    lines_numbers = findChangedLinesPerFile(split_patchfile) # 2D list : fichier, lignes changées 
+    split_patchfile = inserter.diffAnalysisDoer.executePatchfileCommand(commit_command) # est une liste de strings (après split diff --git)
+    lines_numbers = inserter.diffAnalysisDoer.findChangedLinesPerFile(split_patchfile) # 2D list : fichier, lignes changées 
     trace_call_Cpp = "SOURCE_CODE_TRACER.trace('patched function called');" # DEVRA CHANGER EN FONCTION DU LANGAGE ET DE LA MÉTHODE APPELÉE
     
     print(lines_numbers)
     # les éléments de première dimension de file_contents_lines doivent correspondre avec ceux
     # de split_patchfile.
     # retirer éléments vide pour conserver cohérence
-    split_patchfile, file_contents_lines, lines_numbers = removeEmptyElements(split_patchfile, file_contents_lines, lines_numbers)
+    split_patchfile, file_contents_lines, lines_numbers = inserter.analyzer.removeEmptyElements(split_patchfile, file_contents_lines, lines_numbers)
     
     #analyze_python_file(file_contents_lines, lines_numbers)
     
     # insérer la trace et sauvegarder fichier tracé
     traced_file_contents_lines = copy.deepcopy(file_contents_lines)
-    traced_file_contents_lines = insertTraceCpp(traced_file_contents_lines, lines_numbers, trace_call_Cpp)
+    traced_file_contents_lines = inserter.insertTraceCpp(traced_file_contents_lines, lines_numbers, trace_call_Cpp)
     
-    writeTracedFile(traced_file_contents_lines, filepaths)
+    inserter.writeTracedFile(traced_file_contents_lines, filepaths)
     
     # # test pour vérifier numéro des lignes tracées
-    printInsertedLinesNumbers(lines_numbers, traced_file_contents_lines, trace_call_Cpp)
+    inserter.printInsertedLinesNumbers(lines_numbers, traced_file_contents_lines, trace_call_Cpp)
     
 
 # TODO
