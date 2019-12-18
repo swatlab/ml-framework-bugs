@@ -13,7 +13,7 @@ import re
 import subprocess
 import sys
 
-class Diffdoer:
+class DiffDoer:
 	def getAndFormatCommitNumber(self):
 		"""
 		Parse commit number from the command line and format it

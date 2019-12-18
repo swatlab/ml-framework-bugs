@@ -13,8 +13,8 @@ import re
 import subprocess
 import sys
 
-class Opener:
-	def getFileContents(filepaths):
+class FileOpener:
+	def getFileContents(self, filepaths):
 		"""
 		Opens the files to trace and obtain their text
 		
@@ -28,7 +28,7 @@ class Opener:
 			file.close()
 		return file_contents
 
-	def splitFileContents(file_contents):
+	def splitFileContents(self, file_contents):
 		"""
 		Uses file_contents to split the file content into lines
 		
