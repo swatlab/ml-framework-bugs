@@ -16,7 +16,7 @@ import sys
 """
 -------------------- code inserter --------------------
 """
-def getVersionArguments():
+def getVersionArguments(): # renamed to getAndFormatCommitNumber()
     """
     Parse commit number in the command line and create the commit argument for other commands
     
@@ -32,7 +32,7 @@ def getVersionArguments():
     commit_command = commit_number+'^..'+commit_number
     return commit_command
     
-def commandFilepaths(commit_command):
+def commandFilepaths(commit_command): # renamed to executeChangedFilesPathsDiff()
     """
     Moves into the framework local Github repo and return the names of files changed at the commit
     
@@ -54,7 +54,7 @@ def getFileContents(filepaths):
     """
     Opens the files to trace and obtain their text
     
-    returns : a 1d list of text (each element is the text of each file)
+    returns : a 1D list of text (each element is the text of each file)
     """
     file_contents = []
     for filepath in filepaths:
@@ -75,7 +75,7 @@ def splitFileContents(file_contents):
         file_contents_lines.append(file_content.splitlines())
     return file_contents_lines
 
-def commandPatchfile(commit_command):
+def commandPatchfile(commit_command): # renamed to executePatchfileCommand
     """
     Moves into the framework local Github repo and process the patchfile to obtain split_patchfile
     
@@ -95,7 +95,7 @@ def commandPatchfile(commit_command):
 def splitPatchfile(patchfile):
     """
     create a different patchfile for each file changed
-    returns a 1d list of patchfiles
+    returns a 1D list of patchfiles
     """
     split_patchfile = patchfile.split('diff --git')
     return split_patchfile
@@ -140,8 +140,8 @@ def insertTraceCpp(traced_file_contents_lines, lines_numbers, trace_call_Cpp):
     returns the inserted traced_file_contents_lines
     """
     for traced_file_content_line, line_number in zip(traced_file_contents_lines, lines_numbers):
-        # adding of tracer.trace call on a inverted list to conserve the lines numbers (you add at the end so 
-        # lines numbers aren't shifted)
+        # adding of tracer.trace call on a inverted list to conserve the lines numbers (by adding from the end,  
+        # the lines numbers doesn't shift)
         [traced_file_content_line.insert(n, trace_call_Cpp) for n in line_number[::-1]]
     return traced_file_contents_lines
 
