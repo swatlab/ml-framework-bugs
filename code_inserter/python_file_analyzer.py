@@ -90,7 +90,7 @@ def is_docstring_line(test_str):
     matches a docstring that start and end at the same line
     returns true if there is only one match
     """
-    regex = r"(\"\"\".*\"\"\")"
+    regex = r"(\"\"\".*\"\"\"|'''.*''')"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 1
 
@@ -99,7 +99,7 @@ def is_docstring_delimiter(test_str):
     matches only one occurence of docstring delimiter
     returns true if there is only one match
     """
-    regex = r"\"\"\""
+    regex = r"\"\"\"|'''"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 1
 
