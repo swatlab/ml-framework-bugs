@@ -212,7 +212,7 @@ def new_python_analyze_file(code_lines):
 	numeric_index = 0 # you count from 0 in python
 	real_index = 1 # you count from 1 for line numbers
 	max_numeric_index = len(code_lines)
-	insertable_lines = [False] * len(code_lines)
+	insertable_lines = [None] * len(code_lines)
 
 	while numeric_index < max_numeric_index:
 		test_str = code_lines[numeric_index]
