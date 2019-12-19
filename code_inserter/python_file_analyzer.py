@@ -227,14 +227,27 @@ def new_python_analyze_file(code_lines):
 			insertable_lines[numeric_index] = True
 
 		elif is_docstring_delimiter(test_str):
+			# current line is the starting """ 
+			insertable_lines[numeric_index] = False
+
+			# therefore, increment to next line
 			# increment indexes
 			numeric_index = increment_numeric_index(numeric_index)
 			real_index = increment_real_index(real_index)
-			while not is_docstring_delimiter(test_str):
+			test_str = code_lines[numeric_index]
+
+			while not is_docstring_delimiter(test_str) and numeric_index < max_numeric_index:
 				insertable_lines[numeric_index] = False
+				# therefore, go to next line
 				# increment indexes
 				numeric_index = increment_numeric_index(numeric_index)
 				real_index = increment_real_index(real_index)
+				test_str = code_lines[numeric_index]
+			
+			# at the end of the while, we reach the ending """, therefore we 
+			# mark is a not insertable 
+			test_str = code_lines[numeric_index]
+			insertable_lines[numeric_index] = False
 
 		# increment indexes
 		numeric_index = increment_numeric_index(numeric_index)
