@@ -81,18 +81,25 @@ def is_comment_line(test_str):
     matches a whitespace followed by a #
     returns true if there is only one match
     """
-    # the def regex is different to handle multi-line def 
     regex = r"(\s*#)"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 1
 
 def is_docstring_line(test_str):
     """
-    matches docstring that start and end at the same line
+    matches a docstring that start and end at the same line
     returns true if there is only one match
     """
-    # the def regex is different to handle multi-line def 
-    regex = r'(""".*""")'
+    regex = r"(\"\"\".*\"\"\")"
+    function_matches = re.findall(regex, test_str, re.MULTILINE)
+    return len(function_matches) == 1
+
+def is_docstring_delimiter(test_str):
+    """
+    matches only one occurence of docstring delimiter
+    returns true if there is only one match
+    """
+    regex = r"\"\"\""
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 1
 
@@ -204,9 +211,10 @@ def new_python_analyze_file(code_lines):
 	"""
 	numeric_index = 0 # you count from 0 in python
 	real_index = 1 # you count from 1 for line numbers
+	max_numeric_index = len(code_lines)
 	insertable_lines = [False] * len(code_lines)
 
-	for code_line in code_lines:
+	while numeric_index < max_numeric_index:
 		test_str = code_lines[numeric_index]
 		
 		if is_function_def(test_str):
@@ -218,6 +226,17 @@ def new_python_analyze_file(code_lines):
 		elif is_docstring_line(test_str):
 			insertable_lines[numeric_index] = True
 
+		elif is_docstring_delimiter(test_str):
+			# increment indexes
+			numeric_index = increment_numeric_index(numeric_index)
+			real_index = increment_real_index(real_index)
+			while not is_docstring_delimiter(test_str):
+				insertable_lines[numeric_index] = False
+				# increment indexes
+				numeric_index = increment_numeric_index(numeric_index)
+				real_index = increment_real_index(real_index)
+
+		# increment indexes
 		numeric_index = increment_numeric_index(numeric_index)
 		real_index = increment_real_index(real_index)
 
