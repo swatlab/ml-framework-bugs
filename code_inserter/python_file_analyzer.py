@@ -72,7 +72,7 @@ def is_function_def(test_str):
     returns true if there is only one match
     """
     # the def regex is different to handle multi-line def 
-    regex = r"(def \w+\(.*|if .+:|elif .+:|else.+:|try:|except \w+:|for .+:|while .+:)"
+    regex = r"(def \w+\(.*|if .+:|elif .+:|else.+:|try:|except \w+:|for .+:|while .+:|class .+:)"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 1
 
@@ -109,7 +109,7 @@ def is_normal_line(test_str):
     returns true if there is no match (the line is a normal code line)
     """
     # the def regex is different to handle multi-line def 
-    regex = r"(def \w+\(.*|if .+:|elif .+:|else.+:|try:|except \w+:|for .+:|while .+:)"
+    regex = r"(def \w+\(.*|if .+:|elif .+:|else.+:|try:|except \w+:|for .+:|while .+:|class .+:)"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 0
 
@@ -128,7 +128,7 @@ def find_function_matches(test_str):
     matches a def, an if, ... or a while in the test_str (one line of code)
     returns the litteral value found for printing
     """
-    regex = r"(def \w+\(.*|if .+:|elif .+:|else.+:|try:|except \w+:|for .+:|while .+:)"
+    regex = r"(def \w+\(.*|if .+:|elif .+:|else.+:|try:|except \w+:|for .+:|while .+:|class .+:)"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return function_matches
 
