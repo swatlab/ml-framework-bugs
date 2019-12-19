@@ -86,6 +86,16 @@ def is_comment_line(test_str):
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 1
 
+def is_docstring_line(test_str):
+    """
+    matches docstring that start and end at the same line
+    returns true if there is only one match
+    """
+    # the def regex is different to handle multi-line def 
+    regex = r'(""".*""")'
+    function_matches = re.findall(regex, test_str, re.MULTILINE)
+    return len(function_matches) == 1
+
 def is_normal_line(test_str):
     """
     matches a def, an if, ... or a while in the test_str (one line of code)
@@ -197,13 +207,17 @@ def new_python_analyze_file(code_lines):
 	insertable_lines = [False] * len(code_lines)
 
 	for code_line in code_lines:
-		test_string = code_lines[numeric_index]
+		test_str = code_lines[numeric_index]
 		
-		if is_function_def(test_string):
+		if is_function_def(test_str):
 			insertable_lines[numeric_index] = False
 
-		elif is_comment_line(test_string):
+		elif is_comment_line(test_str):
 			insertable_lines[numeric_index] = True
+
+		elif is_docstring_line(test_str):
+			insertable_lines[numeric_index] = True
+
 		numeric_index = increment_numeric_index(numeric_index)
 		real_index = increment_real_index(real_index)
 
