@@ -66,37 +66,6 @@ Created on Wed Aug 14 15:19:31 2019
 # https://docs.python.org/2/library/trace.html
 # https://docs.python.org/3.0/library/trace.html
 
-import argparse
-import copy
-import os
-import re
-import subprocess
-import sys
-
-
-def getFileContents(filepaths):
-    """
-    Open manually selected python files
-    returns a 1d list, one element for each python file
-    """
-    file_contents = []
-    for filepath in filepaths:
-        file = open(filepath,"r") 
-        file_content = file.read()
-        file_contents.append(file_content)
-        file.close()
-    return file_contents
-
-def splitFileContents(file_contents):
-    """
-    splits files content in lines
-    returns a 2d list, one element for each python file, then one element for each line of file
-    """
-    file_contents_lines = []
-    for file_content in file_contents:
-        file_contents_lines.append(file_content.splitlines())
-    return file_contents_lines
-
 def is_function_def(test_str):
     """
     matches a def, an if, ... or a while in the test_str (one line of code)
@@ -104,6 +73,16 @@ def is_function_def(test_str):
     """
     # the def regex is different to handle multi-line def 
     regex = r"(def \w+\(.*|if .+:|elif .+:|else.+:|try:|except \w+:|for .+:|while .+:)"
+    function_matches = re.findall(regex, test_str, re.MULTILINE)
+    return len(function_matches) == 1
+
+def is_comment_line(test_str):
+    """
+    matches a whitespace followed by a #
+    returns true if there is only one match
+    """
+    # the def regex is different to handle multi-line def 
+    regex = r"(\s*#)"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 1
 
@@ -203,10 +182,33 @@ def printInsertableLines(insertable_lines):
 		for item in insertable_lines:
 			f.write("%s\n" % item)
 
+def increment_numeric_index(numeric_index):
+	return numeric_index + 1
 
-def new_python_analyze_file(file_contents_lines):
-	insertable_lines = [False] * len(file_contents_lines[0])
+def increment_real_index(real_index):
+	return real_index + 1
+
+def new_python_analyze_file(code_lines):
+	"""
+	Param: a 1D array of the files lines
+	"""
+	numeric_index = 0 # you count from 0 in python
+	real_index = 1 # you count from 1 for line numbers
+	insertable_lines = [False] * len(code_lines)
+
+	for code_line in code_lines:
+		test_string = code_lines[numeric_index]
+		
+		if is_function_def(test_string):
+			insertable_lines[numeric_index] = False
+
+		elif is_comment_line(test_string):
+			insertable_lines[numeric_index] = True
+		numeric_index = increment_numeric_index(numeric_index)
+		real_index = increment_real_index(real_index)
+
 	printInsertableLines(insertable_lines)
+
 
 	
 
@@ -309,4 +311,4 @@ if __name__ == '__main__':
 	filepaths = ["naive_bayes.py"]
 	file_content = opener.getFileContents(filepaths) # 1D
 	file_content_lines = opener.splitFileContents(file_content) # 2D
-	new_python_analyze_file(file_content_lines)
+	new_python_analyze_file(file_content_lines[0])
