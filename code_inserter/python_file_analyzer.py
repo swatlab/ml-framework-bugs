@@ -66,7 +66,16 @@ Created on Wed Aug 14 15:19:31 2019
 # https://docs.python.org/2/library/trace.html
 # https://docs.python.org/3.0/library/trace.html
 
-def is_function_def(test_str):
+def is_class_start(test_str):
+    """
+    matches a def, an if, ... or a while in the test_str (one line of code)
+    returns true if there is only one match
+    """
+    regex = r"(class .+:)"
+    function_matches = re.findall(regex, test_str, re.MULTILINE)
+    return len(function_matches) == 1
+
+def is_python_block_start(test_str):
     """
     matches a def, an if, ... or a while in the test_str (one line of code)
     returns true if there is only one match
@@ -215,8 +224,11 @@ def new_python_analyze_file(code_lines):
 	while numeric_index < max_numeric_index:
 		test_str = code_lines[numeric_index]
 		
-		if is_function_def(test_str): # maybe True ? Because it could be True if inserting after 
+		if is_class_start(test_str):
 			insertable_lines[numeric_index] = False
+		
+		elif is_python_block_start(test_str): 
+			insertable_lines[numeric_index] = True
 
 		elif is_multiline_start(test_str):
 			# current line is the starting ( or [ or { 
@@ -240,9 +252,9 @@ def new_python_analyze_file(code_lines):
 			# mark is a not insertable 
 			test_str = code_lines[numeric_index]
 			if is_multiline_end(test_str):
-				insertable_lines[numeric_index] = False
-			else: # not important but allows to safecheck is_multiline_end()
 				insertable_lines[numeric_index] = True
+			else: # not important but allows to safecheck is_multiline_end()
+				insertable_lines[numeric_index] = False
 
 		elif is_docstring_line(test_str):
 			insertable_lines[numeric_index] = True
@@ -270,7 +282,7 @@ def new_python_analyze_file(code_lines):
 			# at the end of the while, we reach the ending """, therefore we 
 			# mark is a not insertable 
 			test_str = code_lines[numeric_index]
-			insertable_lines[numeric_index] = False
+			insertable_lines[numeric_index] = True
 
 		elif is_comment_line(test_str):
 			insertable_lines[numeric_index] = True
