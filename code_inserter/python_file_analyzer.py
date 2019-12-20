@@ -66,6 +66,16 @@ Created on Wed Aug 14 15:19:31 2019
 # https://docs.python.org/2/library/trace.html
 # https://docs.python.org/3.0/library/trace.html
 
+def is_empty_line(test_str):
+    """
+    matches a empty character or a comment in the test_str (one line of code)
+    returns true if there is only one match
+    """
+    # the def regex is different to handle multi-line def 
+    empty_line_regex = r"^\s*$|#"
+    empty_line_match = re.findall(empty_line_regex, test_str, re.MULTILINE)
+    return len(empty_line_match) == 1
+
 def is_class_start(test_str):
     """
     matches a def, an if, ... or a while in the test_str (one line of code)
@@ -166,7 +176,6 @@ def is_pass_statement(test_str):
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 1
 
-
 def is_normal_line(test_str):
     """
     matches a def, an if, ... or a while in the test_str (one line of code)
@@ -177,15 +186,6 @@ def is_normal_line(test_str):
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 0
 
-def is_empty_line(test_str):
-    """
-    matches a empty character or a comment in the test_str (one line of code)
-    returns true if there is only one match
-    """
-    # the def regex is different to handle multi-line def 
-    empty_line_regex = r"^\s*$|#"
-    empty_line_match = re.findall(empty_line_regex, test_str, re.MULTILINE)
-    return len(empty_line_match) == 1
 
 def find_function_matches(test_str):
     """
@@ -224,7 +224,10 @@ def new_python_analyze_file(code_lines):
 	while numeric_index < max_numeric_index:
 		test_str = code_lines[numeric_index]
 		
-		if is_class_start(test_str):
+		if is_empty_line(test_str):
+			insertable_lines[numeric_index] = True
+
+		elif is_class_start(test_str):
 			insertable_lines[numeric_index] = False
 		
 		elif is_python_block_start(test_str): 
@@ -295,6 +298,10 @@ def new_python_analyze_file(code_lines):
 
 		elif is_pass_statement(test_str):
 			insertable_lines[numeric_index] = False
+
+		# a functional code line
+		# else:
+		# 	insertable_lines[numeric_index] = True
 
 		# end of checks for the current line
 		# increment indexes
