@@ -71,8 +71,7 @@ def is_function_def(test_str):
     matches a def, an if, ... or a while in the test_str (one line of code)
     returns true if there is only one match
     """
-    # the def regex is different to handle multi-line def 
-    regex = r"(def \w+\(.*|if .+:|elif .+:|else.+:|try:|except \w+:|for .+:|while .+:|class .+:)"
+    regex = r"(def \w+\(.*\):|if .+:|elif .+:|else.+:|try:|except \w+:|for .+:|while .+:|class .+:)"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 1
 
@@ -170,7 +169,7 @@ def find_function_matches(test_str):
 
 def printInsertableLines(insertable_lines):
 	"""
-	Takes a 1D array of booleans. The array represents each line of the original
+	[FOR TESTING] Takes a 1D array of booleans. The array represents each line of the original
 	code file.
 	"""
 	with open('insertable_lines.txt', 'w') as f:
@@ -192,6 +191,7 @@ def new_python_analyze_file(code_lines):
 	max_numeric_index = len(code_lines)
 	insertable_lines = [None] * len(code_lines)
 
+	# Check all lines, starting from beginning
 	while numeric_index < max_numeric_index:
 		test_str = code_lines[numeric_index]
 
@@ -218,7 +218,7 @@ def new_python_analyze_file(code_lines):
 			test_str = code_lines[numeric_index]
 			if is_multiline_end(test_str):
 				insertable_lines[numeric_index] = False
-			else:
+			else: # not important but allows to safecheck is_multiline_end()
 				insertable_lines[numeric_index] = True
 		
 		elif is_function_def(test_str): # maybe True ? Because it could be True if inserting after 
