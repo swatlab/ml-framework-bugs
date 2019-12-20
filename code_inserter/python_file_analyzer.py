@@ -237,7 +237,9 @@ def new_python_analyze_file(code_lines):
 
 		elif is_docstring_line(test_str):
 			insertable_lines[numeric_index] = True
-
+		
+		# current line is the starting """. We iterate on next lines
+		# until reaching the end of the ending """
 		elif is_docstring_delimiter(test_str):
 			# current line is the starting """ 
 			insertable_lines[numeric_index] = False
@@ -261,6 +263,7 @@ def new_python_analyze_file(code_lines):
 			test_str = code_lines[numeric_index]
 			insertable_lines[numeric_index] = False
 
+		# end of checks for the current line
 		# increment indexes
 		numeric_index = increment_numeric_index(numeric_index)
 		real_index = increment_real_index(real_index)
