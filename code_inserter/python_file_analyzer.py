@@ -300,8 +300,8 @@ def new_python_analyze_file(code_lines):
 			insertable_lines[numeric_index] = False
 
 		# a functional code line
-		# else:
-		# 	insertable_lines[numeric_index] = True
+		else:
+			insertable_lines[numeric_index] = True
 
 		# end of checks for the current line
 		# increment indexes
