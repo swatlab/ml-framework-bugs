@@ -30,7 +30,7 @@ class FileAnalyzer:
 		"""
 		TODO replace with code in python_auto_inserter.py
 		"""
-		are_insertable_lines = []
+		self.are_insertable_lines = []
 		# python : def keyword, if __name__ == '__main__': or if __name__ == "__main__":
 		regex = r"(def \w+\(.*\):|if __name__ == '__main__':|if __name__ == \"__main__\":)"
 		
@@ -73,6 +73,33 @@ def is_function_def(test_str):
     """
     # the def regex is different to handle multi-line def 
     regex = r"(def \w+\(.*|if .+:|elif .+:|else.+:|try:|except \w+:|for .+:|while .+:|class .+:)"
+    function_matches = re.findall(regex, test_str, re.MULTILINE)
+    return len(function_matches) == 1
+
+def is_multiline_start(test_str):
+    """
+    matches a def, an if, ... or a while in the test_str (one line of code)
+    returns true if there is only one match
+    """
+    regex = r"(\[.*,|\(.*|\{.*)"
+    function_matches = re.findall(regex, test_str, re.MULTILINE)
+    return len(function_matches) == 1
+
+def is_multiline_middle(test_str):
+    """
+    matches a def, an if, ... or a while in the test_str (one line of code)
+    returns true if there is only one match
+    """
+    regex = r".*,"
+    function_matches = re.findall(regex, test_str, re.MULTILINE)
+    return len(function_matches) == 1
+
+def is_multiline_end(test_str):
+    """
+    matches a def, an if, ... or a while in the test_str (one line of code)
+    returns true if there is only one match
+    """
+    regex = r"[^\[].*\]|[^\(].*\)|[^\{].*\}"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 1
 
@@ -226,7 +253,30 @@ def new_python_analyze_file(code_lines):
 	while numeric_index < max_numeric_index:
 		test_str = code_lines[numeric_index]
 		
-		if is_function_def(test_str):
+		if is_function_def(test_str): # maybe True ? Because it could be True if inserting after 
+			insertable_lines[numeric_index] = False
+
+		elif is_multiline_start(test_str):
+			# current line is the starting """ 
+			insertable_lines[numeric_index] = False
+
+			# therefore, increment to next line
+			# increment indexes
+			numeric_index = increment_numeric_index(numeric_index)
+			real_index = increment_real_index(real_index)
+			test_str = code_lines[numeric_index]
+
+			while not is_docstring_delimiter(test_str) and numeric_index < max_numeric_index:
+				insertable_lines[numeric_index] = False
+				# therefore, go to next line
+				# increment indexes
+				numeric_index = increment_numeric_index(numeric_index)
+				real_index = increment_real_index(real_index)
+				test_str = code_lines[numeric_index]
+			
+			# at the end of the while, we reach the ending """, therefore we 
+			# mark is a not insertable 
+			test_str = code_lines[numeric_index]
 			insertable_lines[numeric_index] = False
 
 		elif is_comment_line(test_str):
