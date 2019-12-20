@@ -85,6 +85,15 @@ def is_comment_line(test_str):
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 1
 
+def is_decorator_line(test_str):
+    """
+    matches a whitespace followed by a @
+    returns true if there is only one match
+    """
+    regex = r"(\s*@)"
+    function_matches = re.findall(regex, test_str, re.MULTILINE)
+    return len(function_matches) == 1
+
 def is_docstring_line(test_str):
     """
     matches a docstring that start and end at the same line
@@ -222,6 +231,9 @@ def new_python_analyze_file(code_lines):
 
 		elif is_comment_line(test_str):
 			insertable_lines[numeric_index] = True
+
+		elif is_decorator_line(test_str):
+			insertable_lines[numeric_index] = False
 
 		elif is_docstring_line(test_str):
 			insertable_lines[numeric_index] = True
