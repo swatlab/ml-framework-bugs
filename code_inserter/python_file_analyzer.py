@@ -168,64 +168,6 @@ def find_function_matches(test_str):
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return function_matches
 
-# https://stackoverflow.com/a/13649013/9876427
-def get_indentation_level(string):
-    """
-    returns the number of leading spaces in string (one line of code)
-    """
-    return len(string) - len(string.lstrip(" "))
-
-
-
-
-def is_unindented_insertable(file_content_line, syntax_index):
-    """
-    Check if the file_content_line[syntax_index] line is an insertable line.
-    
-    an unindented line is insertable if the the code block is a runable code (non-definition code).
-    General rule : if the line after is also unindented (and a def or normal line), the line is insertable. The reason is that 
-    it does not break in a function def.
-    
-    I tried to cover most cases in my code. I oversimplified unindented lines in four cases. 
-    
-    returns Ture if the line is insertable, else False
-    """
-    need_continue = True
-    insertable = False
-    syntax_index += 1
-    while syntax_index < len(file_content_line) and need_continue:
-        syntax_index += 1
-        
-        print("scour mode at line", syntax_index + 1)
-        
-        # if a next line is unindented (normal or def) concluant result, True
-        is_concluant_line = is_function_def(file_content_line[syntax_index]) or is_normal_line(file_content_line[syntax_index])
-        
-        # if the next line breaks the General rule
-        if get_indentation_level(file_content_line[syntax_index]) != 0:
-            need_continue = False
-            insertable= False
-        # if the next line respects the General rule
-        elif get_indentation_level(file_content_line[syntax_index]) == 0 and is_concluant_line:
-            print("ok, unindented code block")
-            need_continue = False
-            insertable= True
-        # if empty line or comment, shall continue, because the result is not concluant
-        elif is_empty_line(file_content_line[syntax_index]):
-            need_continue = True
-            insertable = False
-        # a line at the end of a code line does never break the General rule. For instance, result is concluant
-        elif syntax_index == len(file_content_line):
-            need_continue = False
-            insertable= True
-    
-    # check one last time. (needed because of syntax_index out of range ....... it's bad)
-    # TODO avoid code duplication. 
-    if syntax_index == len(file_content_line):
-        need_continue = False
-        insertable= True
-    return insertable
-
 def printInsertableLines(insertable_lines):
 	"""
 	Takes a 1D array of booleans. The array represents each line of the original
@@ -326,6 +268,14 @@ def new_python_analyze_file(code_lines):
 
 	
 
+if __name__ == '__main__':
+	opener = FileOpener()
+	filepaths = ["naive_bayes.py"]
+	file_content = opener.getFileContents(filepaths) # 1D
+	file_content_lines = opener.splitFileContents(file_content) # 2D
+	new_python_analyze_file(file_content_lines[0])
+
+
 
 def analyze_python_file(file_contents_lines, lines_numbers):
     """
@@ -420,9 +370,3 @@ def analyze_python_file(file_contents_lines, lines_numbers):
                 
 # C : regex using void/int/bool/etc functionName() and {}
 
-if __name__ == '__main__':
-	opener = FileOpener()
-	filepaths = ["naive_bayes.py"]
-	file_content = opener.getFileContents(filepaths) # 1D
-	file_content_lines = opener.splitFileContents(file_content) # 2D
-	new_python_analyze_file(file_content_lines[0])
