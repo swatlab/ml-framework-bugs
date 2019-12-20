@@ -205,8 +205,11 @@ def new_python_analyze_file(code_lines):
 	# Check all lines, starting from beginning
 	while numeric_index < max_numeric_index:
 		test_str = code_lines[numeric_index]
+		
+		if is_function_def(test_str): # maybe True ? Because it could be True if inserting after 
+			insertable_lines[numeric_index] = False
 
-		if is_multiline_start(test_str):
+		elif is_multiline_start(test_str):
 			# current line is the starting ( or [ or { 
 			insertable_lines[numeric_index] = False
 
@@ -231,9 +234,6 @@ def new_python_analyze_file(code_lines):
 				insertable_lines[numeric_index] = False
 			else: # not important but allows to safecheck is_multiline_end()
 				insertable_lines[numeric_index] = True
-		
-		elif is_function_def(test_str): # maybe True ? Because it could be True if inserting after 
-			insertable_lines[numeric_index] = False
 
 		elif is_docstring_line(test_str):
 			insertable_lines[numeric_index] = True
