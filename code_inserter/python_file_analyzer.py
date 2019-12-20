@@ -87,7 +87,8 @@ def is_multiline_start(test_str):
 def is_multiline_middle(test_str):
     """
     matches a def, an if, ... or a while in the test_str (one line of code)
-    returns true if there is only one match
+    returns true if there is only one match. CAUTION: be aware that this function
+	catches also multiline starts
     """
     regex = r".*,$"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
@@ -99,24 +100,6 @@ def is_multiline_end(test_str):
     returns true if there is only one match
     """
     regex = r"[^\[].*\]$|[^\(].*\)$|[^\{].*\}$|[^\[].*\]:$|[^\(].*\):$|[^\{].*\}:$"
-    function_matches = re.findall(regex, test_str, re.MULTILINE)
-    return len(function_matches) == 1
-
-def is_comment_line(test_str):
-    """
-    matches a whitespace followed by a #
-    returns true if there is only one match
-    """
-    regex = r"(\s*#)"
-    function_matches = re.findall(regex, test_str, re.MULTILINE)
-    return len(function_matches) == 1
-
-def is_decorator_line(test_str):
-    """
-    matches a whitespace followed by a @
-    returns true if there is only one match
-    """
-    regex = r"(\s*@)"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 1
 
@@ -137,6 +120,34 @@ def is_docstring_delimiter(test_str):
     regex = r"\"\"\"|'''"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 1
+
+def is_comment_line(test_str):
+    """
+    matches a whitespace followed by a #
+    returns true if there is only one match
+    """
+    regex = r"(^\s*#)"
+    function_matches = re.findall(regex, test_str, re.MULTILINE)
+    return len(function_matches) == 1
+
+def is_decorator_line(test_str):
+    """
+    matches a whitespace followed by a @
+    returns true if there is only one match
+    """
+    regex = r"(^\s*@)"
+    function_matches = re.findall(regex, test_str, re.MULTILINE)
+    return len(function_matches) == 1
+
+def is_return_statement(test_str):
+    """
+    matches a whitespace followed by a @
+    returns true if there is only one match
+    """
+    regex = r"(^\s*return)"
+    function_matches = re.findall(regex, test_str, re.MULTILINE)
+    return len(function_matches) == 1
+
 
 def is_normal_line(test_str):
     """
@@ -224,12 +235,6 @@ def new_python_analyze_file(code_lines):
 		elif is_function_def(test_str): # maybe True ? Because it could be True if inserting after 
 			insertable_lines[numeric_index] = False
 
-		elif is_comment_line(test_str):
-			insertable_lines[numeric_index] = True
-
-		elif is_decorator_line(test_str):
-			insertable_lines[numeric_index] = False
-
 		elif is_docstring_line(test_str):
 			insertable_lines[numeric_index] = True
 		
@@ -256,6 +261,15 @@ def new_python_analyze_file(code_lines):
 			# at the end of the while, we reach the ending """, therefore we 
 			# mark is a not insertable 
 			test_str = code_lines[numeric_index]
+			insertable_lines[numeric_index] = False
+
+		elif is_comment_line(test_str):
+			insertable_lines[numeric_index] = True
+
+		elif is_decorator_line(test_str):
+			insertable_lines[numeric_index] = False
+
+		elif is_return_statement(test_str):
 			insertable_lines[numeric_index] = False
 
 		# end of checks for the current line
