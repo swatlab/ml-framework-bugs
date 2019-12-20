@@ -148,6 +148,15 @@ def is_return_statement(test_str):
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 1
 
+def is_pass_statement(test_str):
+    """
+    matches a whitespace followed by a @
+    returns true if there is only one match
+    """
+    regex = r"(^\s*pass)"
+    function_matches = re.findall(regex, test_str, re.MULTILINE)
+    return len(function_matches) == 1
+
 
 def is_normal_line(test_str):
     """
@@ -270,6 +279,9 @@ def new_python_analyze_file(code_lines):
 			insertable_lines[numeric_index] = False
 
 		elif is_return_statement(test_str):
+			insertable_lines[numeric_index] = False
+
+		elif is_pass_statement(test_str):
 			insertable_lines[numeric_index] = False
 
 		# end of checks for the current line
