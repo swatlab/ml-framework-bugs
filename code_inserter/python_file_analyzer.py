@@ -81,7 +81,7 @@ def is_multiline_start(test_str):
     matches a def, an if, ... or a while in the test_str (one line of code)
     returns true if there is only one match
     """
-    regex = r"(\[.*,|\(.*|\{.*)"
+    regex = r"(\[.*,$|\(.*,$|\{.*,$)"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 1
 
@@ -90,7 +90,7 @@ def is_multiline_middle(test_str):
     matches a def, an if, ... or a while in the test_str (one line of code)
     returns true if there is only one match
     """
-    regex = r".*,"
+    regex = r".*,$"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 1
 
@@ -99,7 +99,7 @@ def is_multiline_end(test_str):
     matches a def, an if, ... or a while in the test_str (one line of code)
     returns true if there is only one match
     """
-    regex = r"[^\[].*\]|[^\(].*\)|[^\{].*\}"
+    regex = r"[^\[].*\]$|[^\(].*\)$|[^\{].*\}$|[^\[].*\]:$|[^\(].*\):$|[^\{].*\}:$"
     function_matches = re.findall(regex, test_str, re.MULTILINE)
     return len(function_matches) == 1
 
@@ -252,12 +252,9 @@ def new_python_analyze_file(code_lines):
 
 	while numeric_index < max_numeric_index:
 		test_str = code_lines[numeric_index]
-		
-		if is_function_def(test_str): # maybe True ? Because it could be True if inserting after 
-			insertable_lines[numeric_index] = False
 
-		elif is_multiline_start(test_str):
-			# current line is the starting """ 
+		if is_multiline_start(test_str):
+			# current line is the starting ( or [ or { 
 			insertable_lines[numeric_index] = False
 
 			# therefore, increment to next line
@@ -266,7 +263,7 @@ def new_python_analyze_file(code_lines):
 			real_index = increment_real_index(real_index)
 			test_str = code_lines[numeric_index]
 
-			while not is_docstring_delimiter(test_str) and numeric_index < max_numeric_index:
+			while is_multiline_middle(test_str) and numeric_index < max_numeric_index:
 				insertable_lines[numeric_index] = False
 				# therefore, go to next line
 				# increment indexes
@@ -274,9 +271,15 @@ def new_python_analyze_file(code_lines):
 				real_index = increment_real_index(real_index)
 				test_str = code_lines[numeric_index]
 			
-			# at the end of the while, we reach the ending """, therefore we 
+			# at the end of the while, we reach the ending ) or ] or }, therefore we 
 			# mark is a not insertable 
 			test_str = code_lines[numeric_index]
+			if is_multiline_end(test_str):
+				insertable_lines[numeric_index] = False
+			else:
+				insertable_lines[numeric_index] = True
+		
+		elif is_function_def(test_str): # maybe True ? Because it could be True if inserting after 
 			insertable_lines[numeric_index] = False
 
 		elif is_comment_line(test_str):
