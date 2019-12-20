@@ -13,7 +13,7 @@ import re
 import subprocess
 import sys
 
-class FileAnalyzer:
+class AnalyzerSyntax:
 	def removeEmptyElements(self, split_patchfile, file_contents_lines, lines_numbers):
 		"""
 		remove empty elements in the three lists

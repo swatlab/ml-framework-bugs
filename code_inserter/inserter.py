@@ -5,7 +5,7 @@ Created on Mon Jul 22 14:06:21 2019
 @author: kevin
 """
 
-from python_file_analyzer import FileAnalyzer
+from python_file_analyzer import AnalyzerSyntax
 from python_debug import PythonDebug
 from python_file_diff import DiffExecutor
 from python_file_diff_analyzer import DiffProcessor
@@ -22,7 +22,7 @@ import sys
 """
 class Inserter:
 	def __init__(self):
-		self.analyzer = FileAnalyzer()
+		self.analyzerSyntax = AnalyzerSyntax()
 		self.diffExecutor = DiffExecutor()
 		self.diffProcessor = DiffProcessor()
 		self.opener = FileOpener()
@@ -94,7 +94,7 @@ if __name__ == '__main__':
     # les éléments de première dimension de file_contents_lines doivent correspondre avec ceux
     # de split_patchfile.
     # retirer éléments vide pour conserver cohérence
-    split_patchfile, file_contents_lines, lines_numbers = inserter.analyzer.removeEmptyElements(split_patchfile, file_contents_lines, lines_numbers)
+    split_patchfile, file_contents_lines, lines_numbers = inserter.analyzerSyntax.removeEmptyElements(split_patchfile, file_contents_lines, lines_numbers)
     
     #analyze_python_file(file_contents_lines, lines_numbers)
     
