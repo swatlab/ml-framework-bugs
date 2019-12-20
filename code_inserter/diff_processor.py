@@ -13,7 +13,7 @@ import re
 import subprocess
 import sys
 
-class DiffAnalysisDoer:
+class DiffProcessor:
 	def executePatchfileCommand(self, commit_command):
 		"""
 		Moves into the framework local Github repo, create commit patchfile and

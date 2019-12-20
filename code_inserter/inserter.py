@@ -8,7 +8,7 @@ Created on Mon Jul 22 14:06:21 2019
 from python_file_analyzer import FileAnalyzer
 from python_debug import PythonDebug
 from python_file_diff import DiffExecutor
-from python_file_diff_analyzer import DiffAnalysisDoer
+from python_file_diff_analyzer import DiffProcessor
 from python_file_opener import FileOpener
 import argparse
 import copy
@@ -24,7 +24,7 @@ class Inserter:
 	def __init__(self):
 		self.analyzer = FileAnalyzer()
 		self.diffExecutor = DiffExecutor()
-		self.diffAnalysisDoer = DiffAnalysisDoer()
+		self.diffProcessor = DiffProcessor()
 		self.opener = FileOpener()
 
 	def insertTraceCpp(self, traced_file_contents_lines, lines_numbers, trace_call_Cpp):
@@ -85,9 +85,9 @@ if __name__ == '__main__':
     file_contents_lines = inserter.opener.splitFileContents(file_contents)
     
     # obtenir patch -pour chaque fichier séparément-
-    split_patchfile = inserter.diffAnalysisDoer.executePatchfileCommand(commit_command) # est une liste de strings (après split diff --git)
+    split_patchfile = inserter.diffProcessor.executePatchfileCommand(commit_command) # est une liste de strings (après split diff --git)
     print(split_patchfile)
-    lines_numbers = inserter.diffAnalysisDoer.findChangedLinesPerFile(split_patchfile) # 2D list : fichier, lignes changées 
+    lines_numbers = inserter.diffProcessor.findChangedLinesPerFile(split_patchfile) # 2D list : fichier, lignes changées 
     trace_call_Cpp = "SOURCE_CODE_TRACER.trace('patched function called');" # DEVRA CHANGER EN FONCTION DU LANGAGE ET DE LA MÉTHODE APPELÉE
     
     # print(lines_numbers)
