@@ -7,7 +7,7 @@ Created on Mon Jul 22 14:06:21 2019
 
 from python_file_analyzer import FileAnalyzer
 from python_debug import PythonDebug
-from python_file_diff import DiffDoer
+from python_file_diff import DiffExecutor
 from python_file_diff_analyzer import DiffAnalysisDoer
 from python_file_opener import FileOpener
 import argparse
@@ -23,7 +23,7 @@ import sys
 class Inserter:
 	def __init__(self):
 		self.analyzer = FileAnalyzer()
-		self.diffDoer = DiffDoer()
+		self.diffExecutor = DiffExecutor()
 		self.diffAnalysisDoer = DiffAnalysisDoer()
 		self.opener = FileOpener()
 
@@ -65,11 +65,11 @@ class Inserter:
 
 if __name__ == '__main__':
     inserter = Inserter()
-    commit_command = inserter.diffDoer.getAndFormatCommitNumber()
+    commit_command = inserter.diffExecutor.getAndFormatCommitNumber()
     
     # Get files to trace
 	# filenames: [filename_1, filename_2, ..., filename_n]
-    filenames = inserter.diffDoer.executeChangedFilesPathsDiff(commit_command)
+    filenames = inserter.diffExecutor.executeChangedFilesPathsDiff(commit_command)
     filepaths = filenames.splitlines()
     
     # file_contents: The entire text of each modified file. 

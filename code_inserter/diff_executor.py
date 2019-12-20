@@ -5,7 +5,6 @@ Created on Mon Jul 22 14:06:21 2019
 @author: kevin
 """
 
-#from python_inserter_copy import printsmt
 import argparse
 import copy
 import os
@@ -13,7 +12,7 @@ import re
 import subprocess
 import sys
 
-class DiffDoer:
+class DiffExecutor:
 	def getAndFormatCommitNumber(self):
 		"""
 		Parse commit number from the command line and format it
@@ -51,7 +50,7 @@ class DiffDoer:
 		return filenames
 
 if __name__ == '__main__':
-	differ = Diffdoer()
+	differ = DiffExecutor()
 	print("smt for now")
 	commit_command = differ.getAndFormatCommitNumber()
 	filenames = differ.executeChangedFilesPathsDiff(commit_command)

@@ -66,7 +66,7 @@ class DiffAnalysisDoer:
 		return line_numbers
 
 if __name__ == '__main__':
-	differ = Diffdoer()
+	differ = DiffExecutor()
 	print("smt for now")
 	commit_command = differ.getAndFormatCommitNumber()
 	filenames = differ.executeChangedFilesPathsDiff(commit_command)
