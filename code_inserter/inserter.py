@@ -67,7 +67,11 @@ if __name__ == '__main__':
 
 	# Get filepaths of files to trace
 	# filepaths: [filepath_1, filepath_2, ..., filepath_n]
-	filepaths = inserter.diffExecutor.diffFilepaths()
+	commit_command, filepaths = inserter.diffExecutor.diffFilepaths()
+
+	lines_numbers = inserter.diffProcessor.diffLinesNumbers(commit_command)
+	# TODO DEBUG seulement 37 a changé, pas les autres ... 
+	# print(lines_numbers)
     
     # # file_contents: The entire text of each modified file. 
 	# #			   It is a 1D list of strings, obtained after reading entirely each file

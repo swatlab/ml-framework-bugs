@@ -23,6 +23,7 @@ class DiffExecutor:
 		
 		returns:
 			commit_command: commit number in the format "commit_number^..commit_number"
+			--> example of command : git diff fe31832^..fe31832
 		"""
 		
 		parser = argparse.ArgumentParser(description='Commits')
@@ -39,7 +40,7 @@ class DiffExecutor:
 		
 		parameters : 
 			commit_command: commit number in the format "commit_number^..commit_number"
-							(example of command : git diff efc3d6b^..efc3d6b)
+			--> example of command : git diff fe31832^..fe31832
 
 		returns :
 			filenames: string of names of files changed at the commit.
@@ -63,4 +64,4 @@ class DiffExecutor:
 		commit_command = self.getAndFormatCommitNumber()
 		filenames = self.executeChangedFilesPathsDiff(commit_command)
 		filepaths = filenames.splitlines()
-		return filepaths
+		return commit_command, filepaths

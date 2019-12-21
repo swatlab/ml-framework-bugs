@@ -14,13 +14,26 @@ import subprocess
 import sys
 
 class DiffProcessor:
+	def splitPatchfile(self, patchfile):
+		"""
+		[SUB-FUNCTION] of executePatchfileCommand()
+		Separate the patchfile into patchfiles, one for each file changed.
+		
+		returns: a 1D list of patchfiles (string)
+			--> [patchfile_1, patchfile_2, ..., patchfile_n]
+		"""
+		split_patchfile = patchfile.split('diff --git')
+		return split_patchfile
+
 	def executePatchfileCommand(self, commit_command):
 		"""
-		Moves into the framework local Github repo, create commit patchfile and
+		Moves into the framework local Github repo, 
+		retrieves commit patchfile and
 		use splitPatchfile to split the lines of patchfile
 		
 		parameters : 
-			commit_command : commit argument for git diff command (example of command : git diff efc3d6b65^..efc3d6b65)
+			commit_command : commit argument for git diff command
+			--> example of command : git diff fe31832^..fe31832
 		
 		returns :
 			the patchfile split in different elements (one for one file changed)
@@ -31,23 +44,6 @@ class DiffProcessor:
 		split_patchfile = self.splitPatchfile(patchfile)
 		
 		return split_patchfile
-
-	def splitPatchfile(self, patchfile):
-		"""
-		separate the patchfile in one patchfile for each file changed
-		returns a 1D list of patchfiles
-		"""
-		split_patchfile = patchfile.split('diff --git')
-		return split_patchfile
-
-	def findChangedLinesPerFile(self, split_patchfile):
-		"""
-		Go through the split_patchfile and get find the changed lines (of one file at time)
-		"""
-		lines_numbers = []
-		for split_patch in split_patchfile:
-			lines_numbers.append(self.findChangedLines(split_patch))
-		return lines_numbers
 		
 	def findChangedLines(self, split_patch):
 		"""
@@ -65,12 +61,16 @@ class DiffProcessor:
 			line_numbers.append(int(match.group(1)))
 		return line_numbers
 
-if __name__ == '__main__':
-	differ = DiffExecutor()
-	print("smt for now")
-	commit_command = differ.getAndFormatCommitNumber()
-	filenames = differ.executeChangedFilesPathsDiff(commit_command)
-	
-	print(filenames)
-    
+	def findChangedLinesPerFile(self, split_patchfile):
+		"""
+		Go through the split_patchfile and get find the changed lines (of one file at time)
+		"""
+		lines_numbers = []
+		for split_patch in split_patchfile:
+			lines_numbers.append(self.findChangedLines(split_patch))
+		return lines_numbers
 
+	def diffLinesNumbers(self, commit_command):
+		split_patchfile = self.executePatchfileCommand(commit_command)
+		lines_numbers = self.findChangedLinesPerFile(split_patchfile)
+		return lines_numbers
