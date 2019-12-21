@@ -69,6 +69,7 @@ if __name__ == '__main__':
 	# filepaths: [filepath_1, filepath_2, ..., filepath_n]
 	commit_command, filepaths = inserter.diffExecutor.diffFilepaths()
 
+	# lines_numbers: [line_number_1, line_number_2, ..., line_number_n]
 	lines_numbers = inserter.diffProcessor.diffLinesNumbers(commit_command)
 	# TODO DEBUG seulement 37 a changé, pas les autres ... 
 	# print(lines_numbers)
@@ -79,25 +80,7 @@ if __name__ == '__main__':
 	#  [file_2_line_1, file_2_line_2, .. , file_2_line_n],
 	#  [file_m_line_1, file_m_line_2, .. , file_m_line_n]]
 	file_contents_lines = inserter.opener.openFiles(filepaths)
-
-    # # file_contents: The entire text of each modified file. 
-	# #			   It is a 1D list of strings, obtained after reading entirely each file
-    # # 			   [file_1_content, file_2_content, .. , file_n_content]
-    # file_contents = inserter.opener.getFileContents(filepaths)
-    
-    # # file_contents_lines: The entire text of each modified file, BUT is a 2D list
-	# # 				    obtained by splitlines on each element of file_contents
-	# # [[file_1_line_1, file_1_line_2, .. , file_1_line_n], 
-	# #  [file_2_line_1, file_2_line_2, .. , file_2_line_n],
-	# #  [file_m_line_1, file_m_line_2, .. , file_m_line_n]]
-    # file_contents_lines = inserter.opener.splitFileContents(file_contents)
-    
-    # # obtenir patch -pour chaque fichier séparément-
-    # split_patchfile = inserter.diffProcessor.executePatchfileCommand(commit_command) # est une liste de strings (après split diff --git)
-    # print(split_patchfile)
-    # lines_numbers = inserter.diffProcessor.findChangedLinesPerFile(split_patchfile) # 2D list : fichier, lignes changées 
-    # trace_call_Cpp = "SOURCE_CODE_TRACER.trace('patched function called');" # DEVRA CHANGER EN FONCTION DU LANGAGE ET DE LA MÉTHODE APPELÉE
-    
+       
     # # print(lines_numbers)
     # # les éléments de première dimension de file_contents_lines doivent correspondre avec ceux
     # # de split_patchfile.
