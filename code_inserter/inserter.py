@@ -81,7 +81,7 @@ if __name__ == '__main__':
 	#  [file_m_line_1, file_m_line_2, .. , file_m_line_n]]
 	files_contents_lines = inserter.opener.openFiles(filepaths)
     
-	inserted_lines = inserter.analyzerSyntax.analyze_syntax_python(lines_numbers, files_contents_lines)
+	inserted_files_lines = inserter.analyzerSyntax.analyze_syntax_python(lines_numbers, files_contents_lines)
     # #analyze_python_file(file_contents_lines, lines_numbers)
     
     # # insérer la trace et sauvegarder fichier tracé

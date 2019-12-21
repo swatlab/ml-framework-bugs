@@ -159,6 +159,7 @@ class AnalyzerSyntax:
         [FOR TESTING] Takes a 1D array of booleans. The array represents each line of the original
         code file.
         """
+        # TODO don`t overwrite if the function is called multiple times
         with open('insertable_lines.txt', 'w') as f:
             for item in insertable_lines:
                 f.write("%s\n" % item)
@@ -280,7 +281,7 @@ class AnalyzerSyntax:
         self.printInsertableLines(insertable_lines)
         return insertable_lines
 
-    def can_be_inserted(self, lines_numbers, files_contents_lines):
+    def analyze_syntax_python(self, lines_numbers, files_contents_lines):
 
         # insertable_files_lines: 2D array
         insertable_files_lines = []
@@ -289,20 +290,18 @@ class AnalyzerSyntax:
 
 
         # lines_numbers contains real_indexes
-
+        inserted_files_lines = [] # 2D
+        index1D = 0
         for file_numbers in lines_numbers:
+            inserted_lines = []
+            print("insertable file")
             for line_number in file_numbers:
-                index = line_number - 1
-                
-
-
-
-
-    def analyze_syntax_python(self, lines_numbers, files_contents_lines):
-        insertable_files_lines = []
-        for file_content_line in files_contents_lines:
-            insertable_files_lines.append(self.analyze_python(file_content_line))
-        return insertable_files_lines
+                if insertable_files_lines[index1D][line_number] == True:
+                    inserted_lines.append(insertable_files_lines[index1D][line_number])
+                    print("insertable")
+            inserted_files_lines.append(inserted_lines)
+            index1D = index1D + 1
+        return inserted_files_lines
 
 # if __name__ == '__main__':
 # 	opener = FileOpener()

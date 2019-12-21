@@ -59,7 +59,8 @@ class DiffProcessor:
 		
 		for matchNum, match in enumerate(matches, start=1):
 			# print(int(match.group(1))) # debug which lines are modified
-			line_numbers.append(int(match.group(1)))
+			number = int(match.group(1)) - 1
+			line_numbers.append(number)
 		return line_numbers
 
 	def findChangedLinesPerFile(self, split_patchfile):
@@ -67,9 +68,9 @@ class DiffProcessor:
 		Scour the split_patchfile to find the changed lines (of one patchfile at time)
 		
 		returns: changed lines of every file
-		--> [[file_1_line_1, file_1_line_2, .. , file_1_line_n], 
-			[file_2_line_1, file_2_line_2, .. , file_2_line_n],
-			[file_m_line_1, file_m_line_2, .. , file_m_line_n]]
+		--> [[file_1_line_number_1, file_1_line_number_2, .. , file_1_line_number_n], 
+			[file_2_line_number_1, file_2_line_number_2, .. , file_2_line_number_n],
+			[file_m_line_number_1, file_m_line_number_2, .. , file_m_line_number_n]]
 		"""
 		lines_numbers = []
 		for split_patch in split_patchfile:
