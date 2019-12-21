@@ -51,6 +51,7 @@ class DiffProcessor:
 		to obtain changed lines for each file
 		
 		returns: changed lines for each file 
+			--> [line_number_1, line_number_2, ..., line_number_n]
 		"""
 		regex = r"^@@ [-+](\d+)"
 		matches = re.finditer(regex, split_patch, re.MULTILINE)
@@ -65,8 +66,10 @@ class DiffProcessor:
 		"""
 		Scour the split_patchfile to find the changed lines (of one patchfile at time)
 		
-		returns: changed lines for each file
-			--> [line_number_1, line_number_2, ..., line_number_n]
+		returns: changed lines of every file
+		--> [[file_1_line_1, file_1_line_2, .. , file_1_line_n], 
+			[file_2_line_1, file_2_line_2, .. , file_2_line_n],
+			[file_m_line_1, file_m_line_2, .. , file_m_line_n]]
 		"""
 		lines_numbers = []
 		for split_patch in split_patchfile:

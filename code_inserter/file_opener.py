@@ -21,15 +21,15 @@ class FileOpener:
 		returns : a 1D list of strings, obtained after reading entirely each file
 		--> [file_1_content, file_2_content, .. , file_n_content]
 		"""
-		file_contents = []
+		files_contents = []
 		for filepath in filepaths:
 			file = open(filepath,"r") 
 			file_content = file.read()
-			file_contents.append(file_content)
+			files_contents.append(file_content)
 			file.close()
-		return file_contents
+		return files_contents
 
-	def splitFileContents(self, file_contents):
+	def splitFileContents(self, files_contents):
 		"""
 		Uses file_contents to split the file content into lines
 		
@@ -39,14 +39,14 @@ class FileOpener:
 			[file_2_line_1, file_2_line_2, .. , file_2_line_n],
 			[file_m_line_1, file_m_line_2, .. , file_m_line_n]]
 		"""
-		file_contents_lines = []
-		for file_content in file_contents:
-			file_contents_lines.append(file_content.splitlines())
-		return file_contents_lines
+		files_contents_lines = []
+		for file_content in files_contents:
+			files_contents_lines.append(file_content.splitlines())
+		return files_contents_lines
 
 	def openFiles(self, filepaths):
-		file_contents = self.getFileContents(filepaths)
-		file_contents_lines = self.splitFileContents(file_contents)
-		file_contents_lines = list(filter(None, file_contents_lines))
-		return file_contents_lines
+		files_contents = self.getFileContents(filepaths)
+		files_contents_lines = self.splitFileContents(files_contents)
+		files_contents_lines = list(filter(None, files_contents_lines))
+		return files_contents_lines
 

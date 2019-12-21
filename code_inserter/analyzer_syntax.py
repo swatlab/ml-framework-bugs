@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Jul 22 14:06:21 2019
+Created on Wed Aug 14 15:19:31 2019
 
 @author: kevin
 """
+
+# https://docs.python.org/2/library/trace.html
+# https://docs.python.org/3.0/library/trace.html
 
 from file_opener import FileOpener
 import argparse
@@ -14,14 +17,308 @@ import subprocess
 import sys
 
 class AnalyzerSyntax:
+    def is_empty_line(self, test_str):
+        """
+        matches an empty
+        returns true if there is only one match
+        """
+        # the def regex is different to handle multi-line def 
+        empty_line_regex = r"^\s*$"
+        empty_line_match = re.findall(empty_line_regex, test_str, re.MULTILINE)
+        return len(empty_line_match) == 1
 
-	"""
+    def is_class_start(self, test_str):
+        """
+        matches a class def keyword
+        returns true if there is only one match
+        """
+        regex = r"(class .+:)"
+        function_matches = re.findall(regex, test_str, re.MULTILINE)
+        return len(function_matches) == 1
+
+    def is_python_block_start(self, test_str):
+        """
+        matches a def, an if, etc. in the test_str
+        returns true if there is only one match
+        """
+        regex = r"(def \w+\(.*\):|if .+:|elif .+:|else.+:|try:|except \w+:|for .+:|while .+:|class .+:)"
+        function_matches = re.findall(regex, test_str, re.MULTILINE)
+        return len(function_matches) == 1
+
+    def is_multiline_start(self, test_str):
+        """
+        matches the beginning of multiline code statement
+        example : my_list = [el1, el2, el3, <--
+                              el4, el5, el6,
+                              el7, el8, el9]
+        returns true if there is only one match
+        """
+        regex = r"(\[.*,$|\(.*,$|\{.*,$)"
+        function_matches = re.findall(regex, test_str, re.MULTILINE)
+        return len(function_matches) == 1
+
+    def is_multiline_middle(self, test_str):
+        """
+        matches the beginning of multiline code statement
+        example : my_list = [el1, el2, el3,
+                              el4, el5, el6, <--
+                              el7, el8, el9]
+        catches also multiline starts
+        """
+        regex = r".*,$"
+        function_matches = re.findall(regex, test_str, re.MULTILINE)
+        return len(function_matches) == 1
+
+    def is_multiline_end(self, test_str):
+        """
+        matches the beginning of multiline code statement
+        example : my_array = [el1, el2, el3,
+                              el4, el5, el6,
+                              el7, el8, el9] <--
+        returns true if there is only one match
+        """
+        regex = r"[^\[].*\]$|[^\(].*\)$|[^\{].*\}$|[^\[].*\]:$|[^\(].*\):$|[^\{].*\}:$"
+        function_matches = re.findall(regex, test_str, re.MULTILINE)
+        return len(function_matches) == 1
+
+    def is_docstring_line(self, test_str):
+        """
+        matches a docstring that start and end at the same line
+        returns true if there is only one match
+        """
+        regex = r"(\"\"\".*\"\"\"|'''.*''')"
+        function_matches = re.findall(regex, test_str, re.MULTILINE)
+        return len(function_matches) == 1
+
+    def is_docstring_delimiter(self, test_str):
+        """
+        matches only one occurence of docstring delimiter
+        returns true if there is only one match
+        """
+        regex = r"\"\"\"|'''"
+        function_matches = re.findall(regex, test_str, re.MULTILINE)
+        return len(function_matches) == 1
+
+    def is_comment_line(self, test_str):
+        """
+        matches a whitespace followed by a #
+        returns true if there is only one match
+        """
+        regex = r"(^\s*#)"
+        function_matches = re.findall(regex, test_str, re.MULTILINE)
+        return len(function_matches) == 1
+
+    def is_decorator_line(self, test_str):
+        """
+        matches a whitespace followed by a @
+        returns true if there is only one match
+        """
+        regex = r"(^\s*@)"
+        function_matches = re.findall(regex, test_str, re.MULTILINE)
+        return len(function_matches) == 1
+
+    def is_return_statement(self, test_str):
+        """
+        matches a whitespace followed by a @
+        returns true if there is only one match
+        """
+        regex = r"(^\s*return)"
+        function_matches = re.findall(regex, test_str, re.MULTILINE)
+        return len(function_matches) == 1
+
+    def is_pass_statement(self, test_str):
+        """
+        matches a whitespace followed by a @
+        returns true if there is only one match
+        """
+        regex = r"(^\s*pass)"
+        function_matches = re.findall(regex, test_str, re.MULTILINE)
+        return len(function_matches) == 1
+
+    def is_normal_line(self, test_str):
+        """
+        matches a def, an if, ... or a while in the test_str (one line of code)
+        returns true if there is no match (the line is a normal code line)
+        """
+        # the def regex is different to handle multi-line def 
+        regex = r"(def \w+\(.*|if .+:|elif .+:|else.+:|try:|except \w+:|for .+:|while .+:|class .+:)"
+        function_matches = re.findall(regex, test_str, re.MULTILINE)
+        return len(function_matches) == 0
+
+    def find_function_matches(self, test_str):
+        """
+        matches a def, an if, ... or a while in the test_str (one line of code)
+        returns the litteral value found for printing
+        """
+        regex = r"(def \w+\(.*|if .+:|elif .+:|else.+:|try:|except \w+:|for .+:|while .+:|class .+:)"
+        function_matches = re.findall(regex, test_str, re.MULTILINE)
+        return function_matches
+
+    def printInsertableLines(self, insertable_lines):
+        """
+        [FOR TESTING] Takes a 1D array of booleans. The array represents each line of the original
+        code file.
+        """
+        with open('insertable_lines.txt', 'w') as f:
+            for item in insertable_lines:
+                f.write("%s\n" % item)
+
+    def increment_numeric_index(self, numeric_index):
+        return numeric_index + 1
+
+    def increment_real_index(self, real_index):
+        return real_index + 1
+
+    def analyze_python(self, code_lines):
+        """
+        Checks every line of a file file_content_lines (1D array, because
+        it is the second dimension of files_contents_lines) and 
+        create a same sized 1D list. A line in insertable_lines
+        indicates if the corresponding line in file_content_lines
+        can have a trace call at the next line (real line + 1)
+
+        Param: a 1D array of the files lines
+        --> [file_line_1, file_line_2, .. , file_line_n]
+
+        returns: a 1D array that indicates insertability of each
+                 corresponding line
+        --> [True/False, True/False, .. , True/False]
+        """
+        numeric_index = 0 # you count from 0 in python
+        real_index = 1 # you count from 1 for line numbers
+        max_numeric_index = len(code_lines)
+        insertable_lines = [None] * len(code_lines)
+
+        # Check all lines, starting from beginning
+        while numeric_index < max_numeric_index:
+            test_str = code_lines[numeric_index]
+            
+            if self.is_empty_line(test_str):
+                insertable_lines[numeric_index] = True
+
+            elif self.is_class_start(test_str):
+                insertable_lines[numeric_index] = False
+            
+            elif self.is_python_block_start(test_str): 
+                insertable_lines[numeric_index] = True
+
+            elif self.is_multiline_start(test_str):
+                # current line is the starting ( or [ or { 
+                insertable_lines[numeric_index] = False
+
+                # therefore, increment to next line
+                # increment indexes
+                numeric_index = self.increment_numeric_index(numeric_index)
+                real_index = self.increment_real_index(real_index)
+                test_str = code_lines[numeric_index]
+
+                while self.is_multiline_middle(test_str) and numeric_index < max_numeric_index:
+                    insertable_lines[numeric_index] = False
+                    # therefore, go to next line
+                    # increment indexes
+                    numeric_index = self.increment_numeric_index(numeric_index)
+                    real_index = self.increment_real_index(real_index)
+                    test_str = code_lines[numeric_index]
+                
+                # at the end of the while, we reach the ending ) or ] or }, therefore we 
+                # mark is a not insertable 
+                test_str = code_lines[numeric_index]
+                if self.is_multiline_end(test_str):
+                    insertable_lines[numeric_index] = True
+                else: # not important but allows to safecheck is_multiline_end()
+                    insertable_lines[numeric_index] = False
+
+            elif self.is_docstring_line(test_str):
+                insertable_lines[numeric_index] = True
+            
+            # current line is the starting """. We iterate on next lines
+            # until reaching the end of the ending """
+            elif self.is_docstring_delimiter(test_str):
+                # current line is the starting """ 
+                insertable_lines[numeric_index] = False
+
+                # therefore, increment to next line
+                # increment indexes
+                numeric_index = self.increment_numeric_index(numeric_index)
+                real_index = self.increment_real_index(real_index)
+                test_str = code_lines[numeric_index]
+
+                while not self.is_docstring_delimiter(test_str) and numeric_index < max_numeric_index:
+                    insertable_lines[numeric_index] = False
+                    # therefore, go to next line
+                    # increment indexes
+                    numeric_index = self.increment_numeric_index(numeric_index)
+                    real_index = self.increment_real_index(real_index)
+                    test_str = code_lines[numeric_index]
+                
+                # at the end of the while, we reach the ending """, therefore we 
+                # mark is a not insertable 
+                test_str = code_lines[numeric_index]
+                insertable_lines[numeric_index] = True
+
+            elif self.is_comment_line(test_str):
+                insertable_lines[numeric_index] = True
+
+            elif self.is_decorator_line(test_str):
+                insertable_lines[numeric_index] = False
+
+            elif self.is_return_statement(test_str):
+                insertable_lines[numeric_index] = False
+
+            elif self.is_pass_statement(test_str):
+                insertable_lines[numeric_index] = False
+
+            # a functional code line
+            else:
+                insertable_lines[numeric_index] = True
+
+            # end of checks for the current line
+            # increment indexes
+            numeric_index = self.increment_numeric_index(numeric_index)
+            real_index = self.increment_real_index(real_index)
+
+        self.printInsertableLines(insertable_lines)
+        return insertable_lines
+
+    def can_be_inserted(self, lines_numbers, files_contents_lines):
+
+        # insertable_files_lines: 2D array
+        insertable_files_lines = []
+        for file_content_line in files_contents_lines:
+            insertable_files_lines.append(self.analyze_python(file_content_line))
+
+
+        # lines_numbers contains real_indexes
+
+        for file_numbers in lines_numbers:
+            for line_number in file_numbers:
+                index = line_number - 1
+                
+
+
+
+
+    def analyze_syntax_python(self, lines_numbers, files_contents_lines):
+        insertable_files_lines = []
+        for file_content_line in files_contents_lines:
+            insertable_files_lines.append(self.analyze_python(file_content_line))
+        return insertable_files_lines
+
+# if __name__ == '__main__':
+# 	opener = FileOpener()
+# 	analyzer_syntax = AnalyzerSyntax()
+# 	filepaths = ["naive_bayes.py"]
+# 	files_contents = opener.getFileContents(filepaths) # 1D
+# 	files_contents_lines = opener.splitFileContents(files_contents) # 2D
+# 	analyzer_syntax.analyze_syntax_python(files_contents_lines[0])
+
+
+"""
 	----------------------- code syntax analyzer ------------------------
-	"""
+
 	def analyze_python_file(self, file_contents_lines, lines_numbers):
-		"""
-		TODO replace with code in python_auto_inserter.py
-		"""
+		# TODO replace with code in python_auto_inserter.py
+
 		self.are_insertable_lines = []
 		# python : def keyword, if __name__ == '__main__': or if __name__ == "__main__":
 		regex = r"(def \w+\(.*\):|if __name__ == '__main__':|if __name__ == \"__main__\":)"
@@ -47,271 +344,7 @@ class AnalyzerSyntax:
 							
 					line_number -= 1
 	# C : regex using void/int/bool/etc functionName() and {}
-
-# -*- coding: utf-8 -*-
 """
-Created on Wed Aug 14 15:19:31 2019
-
-@author: kevin
-"""
-
-# https://docs.python.org/2/library/trace.html
-# https://docs.python.org/3.0/library/trace.html
-
-def is_empty_line(test_str):
-    """
-    matches a empty character or a comment in the test_str (one line of code)
-    returns true if there is only one match
-    """
-    # the def regex is different to handle multi-line def 
-    empty_line_regex = r"^\s*$|#"
-    empty_line_match = re.findall(empty_line_regex, test_str, re.MULTILINE)
-    return len(empty_line_match) == 1
-
-def is_class_start(test_str):
-    """
-    matches a def, an if, ... or a while in the test_str (one line of code)
-    returns true if there is only one match
-    """
-    regex = r"(class .+:)"
-    function_matches = re.findall(regex, test_str, re.MULTILINE)
-    return len(function_matches) == 1
-
-def is_python_block_start(test_str):
-    """
-    matches a def, an if, ... or a while in the test_str (one line of code)
-    returns true if there is only one match
-    """
-    regex = r"(def \w+\(.*\):|if .+:|elif .+:|else.+:|try:|except \w+:|for .+:|while .+:|class .+:)"
-    function_matches = re.findall(regex, test_str, re.MULTILINE)
-    return len(function_matches) == 1
-
-def is_multiline_start(test_str):
-    """
-    matches a def, an if, ... or a while in the test_str (one line of code)
-    returns true if there is only one match
-    """
-    regex = r"(\[.*,$|\(.*,$|\{.*,$)"
-    function_matches = re.findall(regex, test_str, re.MULTILINE)
-    return len(function_matches) == 1
-
-def is_multiline_middle(test_str):
-    """
-    matches a def, an if, ... or a while in the test_str (one line of code)
-    returns true if there is only one match. CAUTION: be aware that this function
-	catches also multiline starts
-    """
-    regex = r".*,$"
-    function_matches = re.findall(regex, test_str, re.MULTILINE)
-    return len(function_matches) == 1
-
-def is_multiline_end(test_str):
-    """
-    matches a def, an if, ... or a while in the test_str (one line of code)
-    returns true if there is only one match
-    """
-    regex = r"[^\[].*\]$|[^\(].*\)$|[^\{].*\}$|[^\[].*\]:$|[^\(].*\):$|[^\{].*\}:$"
-    function_matches = re.findall(regex, test_str, re.MULTILINE)
-    return len(function_matches) == 1
-
-def is_docstring_line(test_str):
-    """
-    matches a docstring that start and end at the same line
-    returns true if there is only one match
-    """
-    regex = r"(\"\"\".*\"\"\"|'''.*''')"
-    function_matches = re.findall(regex, test_str, re.MULTILINE)
-    return len(function_matches) == 1
-
-def is_docstring_delimiter(test_str):
-    """
-    matches only one occurence of docstring delimiter
-    returns true if there is only one match
-    """
-    regex = r"\"\"\"|'''"
-    function_matches = re.findall(regex, test_str, re.MULTILINE)
-    return len(function_matches) == 1
-
-def is_comment_line(test_str):
-    """
-    matches a whitespace followed by a #
-    returns true if there is only one match
-    """
-    regex = r"(^\s*#)"
-    function_matches = re.findall(regex, test_str, re.MULTILINE)
-    return len(function_matches) == 1
-
-def is_decorator_line(test_str):
-    """
-    matches a whitespace followed by a @
-    returns true if there is only one match
-    """
-    regex = r"(^\s*@)"
-    function_matches = re.findall(regex, test_str, re.MULTILINE)
-    return len(function_matches) == 1
-
-def is_return_statement(test_str):
-    """
-    matches a whitespace followed by a @
-    returns true if there is only one match
-    """
-    regex = r"(^\s*return)"
-    function_matches = re.findall(regex, test_str, re.MULTILINE)
-    return len(function_matches) == 1
-
-def is_pass_statement(test_str):
-    """
-    matches a whitespace followed by a @
-    returns true if there is only one match
-    """
-    regex = r"(^\s*pass)"
-    function_matches = re.findall(regex, test_str, re.MULTILINE)
-    return len(function_matches) == 1
-
-def is_normal_line(test_str):
-    """
-    matches a def, an if, ... or a while in the test_str (one line of code)
-    returns true if there is no match (the line is a normal code line)
-    """
-    # the def regex is different to handle multi-line def 
-    regex = r"(def \w+\(.*|if .+:|elif .+:|else.+:|try:|except \w+:|for .+:|while .+:|class .+:)"
-    function_matches = re.findall(regex, test_str, re.MULTILINE)
-    return len(function_matches) == 0
-
-
-def find_function_matches(test_str):
-    """
-    matches a def, an if, ... or a while in the test_str (one line of code)
-    returns the litteral value found for printing
-    """
-    regex = r"(def \w+\(.*|if .+:|elif .+:|else.+:|try:|except \w+:|for .+:|while .+:|class .+:)"
-    function_matches = re.findall(regex, test_str, re.MULTILINE)
-    return function_matches
-
-def printInsertableLines(insertable_lines):
-	"""
-	[FOR TESTING] Takes a 1D array of booleans. The array represents each line of the original
-	code file.
-	"""
-	with open('insertable_lines.txt', 'w') as f:
-		for item in insertable_lines:
-			f.write("%s\n" % item)
-
-def increment_numeric_index(numeric_index):
-	return numeric_index + 1
-
-def increment_real_index(real_index):
-	return real_index + 1
-
-def new_python_analyze_file(code_lines):
-	"""
-	Param: a 1D array of the files lines
-	"""
-	numeric_index = 0 # you count from 0 in python
-	real_index = 1 # you count from 1 for line numbers
-	max_numeric_index = len(code_lines)
-	insertable_lines = [None] * len(code_lines)
-
-	# Check all lines, starting from beginning
-	while numeric_index < max_numeric_index:
-		test_str = code_lines[numeric_index]
-		
-		if is_empty_line(test_str):
-			insertable_lines[numeric_index] = True
-
-		elif is_class_start(test_str):
-			insertable_lines[numeric_index] = False
-		
-		elif is_python_block_start(test_str): 
-			insertable_lines[numeric_index] = True
-
-		elif is_multiline_start(test_str):
-			# current line is the starting ( or [ or { 
-			insertable_lines[numeric_index] = False
-
-			# therefore, increment to next line
-			# increment indexes
-			numeric_index = increment_numeric_index(numeric_index)
-			real_index = increment_real_index(real_index)
-			test_str = code_lines[numeric_index]
-
-			while is_multiline_middle(test_str) and numeric_index < max_numeric_index:
-				insertable_lines[numeric_index] = False
-				# therefore, go to next line
-				# increment indexes
-				numeric_index = increment_numeric_index(numeric_index)
-				real_index = increment_real_index(real_index)
-				test_str = code_lines[numeric_index]
-			
-			# at the end of the while, we reach the ending ) or ] or }, therefore we 
-			# mark is a not insertable 
-			test_str = code_lines[numeric_index]
-			if is_multiline_end(test_str):
-				insertable_lines[numeric_index] = True
-			else: # not important but allows to safecheck is_multiline_end()
-				insertable_lines[numeric_index] = False
-
-		elif is_docstring_line(test_str):
-			insertable_lines[numeric_index] = True
-		
-		# current line is the starting """. We iterate on next lines
-		# until reaching the end of the ending """
-		elif is_docstring_delimiter(test_str):
-			# current line is the starting """ 
-			insertable_lines[numeric_index] = False
-
-			# therefore, increment to next line
-			# increment indexes
-			numeric_index = increment_numeric_index(numeric_index)
-			real_index = increment_real_index(real_index)
-			test_str = code_lines[numeric_index]
-
-			while not is_docstring_delimiter(test_str) and numeric_index < max_numeric_index:
-				insertable_lines[numeric_index] = False
-				# therefore, go to next line
-				# increment indexes
-				numeric_index = increment_numeric_index(numeric_index)
-				real_index = increment_real_index(real_index)
-				test_str = code_lines[numeric_index]
-			
-			# at the end of the while, we reach the ending """, therefore we 
-			# mark is a not insertable 
-			test_str = code_lines[numeric_index]
-			insertable_lines[numeric_index] = True
-
-		elif is_comment_line(test_str):
-			insertable_lines[numeric_index] = True
-
-		elif is_decorator_line(test_str):
-			insertable_lines[numeric_index] = False
-
-		elif is_return_statement(test_str):
-			insertable_lines[numeric_index] = False
-
-		elif is_pass_statement(test_str):
-			insertable_lines[numeric_index] = False
-
-		# a functional code line
-		else:
-			insertable_lines[numeric_index] = True
-
-		# end of checks for the current line
-		# increment indexes
-		numeric_index = increment_numeric_index(numeric_index)
-		real_index = increment_real_index(real_index)
-
-	printInsertableLines(insertable_lines)
-
-
-	
-
-if __name__ == '__main__':
-	opener = FileOpener()
-	filepaths = ["naive_bayes.py"]
-	file_content = opener.getFileContents(filepaths) # 1D
-	file_content_lines = opener.splitFileContents(file_content) # 2D
-	new_python_analyze_file(file_content_lines[0])
-
 
 
 def analyze_python_file(file_contents_lines, lines_numbers):
