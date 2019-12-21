@@ -5,14 +5,21 @@ import re
 import subprocess
 import sys
 
-# https://stackoverflow.com/a/13649013/9876427
-def get_indentation_level(string):
-    """
-    returns the number of leading spaces in string (one line of code)
-    """
-    return len(string) - len(string.lstrip(" "))
+class AnalyzerIndentation:
+    # https://stackoverflow.com/a/13649013/9876427
+    def getIndentationLevel(self, code_line):
+        """
+        returns the number of leading spaces in  (one line of code)
+        """
+        return len(code_line) - len(code_line.lstrip(" "))
 
+    def addIndentationLevel(self, original_line):
+        # apply same level of indentation
+        number_spaces = self.getIndentationLevel(original_line)
+        added_spaces = " " * number_spaces
 
+        # open file to trace
+        # insert trace at original_line's next line
 
 
 def is_unindented_insertable(file_content_line, syntax_index):
