@@ -5,11 +5,10 @@ Created on Mon Jul 22 14:06:21 2019
 @author: kevin
 """
 
-from python_file_analyzer import AnalyzerSyntax
-from python_debug import PythonDebug
-from python_file_diff import DiffExecutor
-from python_file_diff_analyzer import DiffProcessor
-from python_file_opener import FileOpener
+from analyzer_syntax import AnalyzerSyntax
+from diff_executor import DiffExecutor
+from diff_processor import DiffProcessor
+from file_opener import FileOpener
 import argparse
 import copy
 import os
