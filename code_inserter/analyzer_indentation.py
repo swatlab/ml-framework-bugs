@@ -13,10 +13,16 @@ class AnalyzerIndentation:
         """
         return len(code_line) - len(code_line.lstrip(" "))
 
-    def addIndentationLevel(self, original_line):
+    def addIndentationLevel(self, original_line, trace_call):
         # apply same level of indentation
         number_spaces = self.getIndentationLevel(original_line)
         added_spaces = " " * number_spaces
+
+        print(trace_call)
+        for i in len(trace_call):
+            trace_call[i] = added_spaces + trace_call[i]
+        print(trace_call)
+        return trace_call
 
         # open file to trace
         # insert trace at original_line's next line

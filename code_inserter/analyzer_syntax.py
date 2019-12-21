@@ -288,19 +288,21 @@ class AnalyzerSyntax:
         for file_content_line in files_contents_lines:
             insertable_files_lines.append(self.analyze_python(file_content_line))
 
-
+        print(insertable_files_lines)
         # lines_numbers contains real_indexes
         inserted_files_lines = [] # 2D
         index1D = 0
         for file_numbers in lines_numbers:
             inserted_lines = []
-            print("insertable file")
+            print("insertable file", file_numbers)
             for line_number in file_numbers:
                 if insertable_files_lines[index1D][line_number] == True:
-                    inserted_lines.append(insertable_files_lines[index1D][line_number])
-                    print("insertable")
+                    inserted_lines.append(line_number)
+                    print("insertable line", line_number)
             inserted_files_lines.append(inserted_lines)
             index1D = index1D + 1
+            
+        inserted_files_lines = list(filter(None, inserted_files_lines))
         return inserted_files_lines
 
 # if __name__ == '__main__':
