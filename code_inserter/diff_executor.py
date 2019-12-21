@@ -32,7 +32,7 @@ class DiffExecutor:
 
 		commit_number = args.commits[0]
 		commit_command = commit_number+'^..'+commit_number
-		return commit_command
+		return commit_number, commit_command
 		
 	def executeChangedFilesPathsDiff(self, commit_command):
 		"""
@@ -61,7 +61,7 @@ class DiffExecutor:
 		returns: Paths of files changed at the commit
 			--> [filepath_1, filepath_2, ..., filepath_n]
 		"""
-		commit_command = self.getAndFormatCommitNumber()
+		commit_number, commit_command = self.getAndFormatCommitNumber()
 		filenames = self.executeChangedFilesPathsDiff(commit_command)
 		filepaths = filenames.splitlines()
-		return commit_command, filepaths
+		return commit_number, commit_command, filepaths
