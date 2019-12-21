@@ -75,5 +75,7 @@ class DiffProcessor:
 
 	def diffLinesNumbers(self, commit_command):
 		split_patchfile = self.executePatchfileCommand(commit_command)
+		split_patchfile = list(filter(None, split_patchfile))
 		lines_numbers = self.findChangedLinesPerFile(split_patchfile)
+		lines_numbers = list(filter(None, lines_numbers))
 		return lines_numbers

@@ -14,14 +14,6 @@ import subprocess
 import sys
 
 class AnalyzerSyntax:
-	def removeEmptyElements(self, split_patchfile, file_contents_lines, lines_numbers):
-		"""
-		remove empty elements in the three lists
-		"""
-		split_patchfile = list(filter(None, split_patchfile))
-		file_contents_lines = list(filter(None, file_contents_lines))
-		lines_numbers = list(filter(None, lines_numbers))
-		return split_patchfile, file_contents_lines, lines_numbers
 
 	"""
 	----------------------- code syntax analyzer ------------------------

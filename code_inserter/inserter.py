@@ -80,12 +80,6 @@ if __name__ == '__main__':
 	#  [file_2_line_1, file_2_line_2, .. , file_2_line_n],
 	#  [file_m_line_1, file_m_line_2, .. , file_m_line_n]]
 	file_contents_lines = inserter.opener.openFiles(filepaths)
-       
-    # # print(lines_numbers)
-    # # les éléments de première dimension de file_contents_lines doivent correspondre avec ceux
-    # # de split_patchfile.
-    # # retirer éléments vide pour conserver cohérence
-    # split_patchfile, file_contents_lines, lines_numbers = inserter.analyzerSyntax.removeEmptyElements(split_patchfile, file_contents_lines, lines_numbers)
     
     # #analyze_python_file(file_contents_lines, lines_numbers)
     
