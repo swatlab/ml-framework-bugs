@@ -5,7 +5,7 @@ Created on Mon Jul 22 14:06:21 2019
 @author: kevin
 """
 
-from python_file_opener import FileOpener
+from file_opener import FileOpener
 import argparse
 import copy
 import os
