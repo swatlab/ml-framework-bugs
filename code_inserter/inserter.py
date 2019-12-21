@@ -73,6 +73,13 @@ if __name__ == '__main__':
 	# TODO DEBUG seulement 37 a changé, pas les autres ... 
 	# print(lines_numbers)
     
+	# file_contents_lines: The entire text of each modified file, BUT is a 2D list
+	# 				    obtained by splitlines on each element of file_contents
+	# [[file_1_line_1, file_1_line_2, .. , file_1_line_n], 
+	#  [file_2_line_1, file_2_line_2, .. , file_2_line_n],
+	#  [file_m_line_1, file_m_line_2, .. , file_m_line_n]]
+	file_contents_lines = inserter.opener.openFiles(filepaths)
+
     # # file_contents: The entire text of each modified file. 
 	# #			   It is a 1D list of strings, obtained after reading entirely each file
     # # 			   [file_1_content, file_2_content, .. , file_n_content]
