@@ -63,45 +63,43 @@ class Inserter:
 
 
 if __name__ == '__main__':
-    inserter = Inserter()
-    commit_command = inserter.diffExecutor.getAndFormatCommitNumber()
+	inserter = Inserter()
+
+	# Get filepaths of files to trace
+	# filepaths: [filepath_1, filepath_2, ..., filepath_n]
+	filepaths = inserter.diffExecutor.diffFilepaths()
     
-    # Get files to trace
-	# filenames: [filename_1, filename_2, ..., filename_n]
-    filenames = inserter.diffExecutor.executeChangedFilesPathsDiff(commit_command)
-    filepaths = filenames.splitlines()
+    # # file_contents: The entire text of each modified file. 
+	# #			   It is a 1D list of strings, obtained after reading entirely each file
+    # # 			   [file_1_content, file_2_content, .. , file_n_content]
+    # file_contents = inserter.opener.getFileContents(filepaths)
     
-    # file_contents: The entire text of each modified file. 
-	#			   It is a 1D list of strings, obtained after reading entirely each file
-    # 			   [file_1_content, file_2_content, .. , file_n_content]
-    file_contents = inserter.opener.getFileContents(filepaths)
+    # # file_contents_lines: The entire text of each modified file, BUT is a 2D list
+	# # 				    obtained by splitlines on each element of file_contents
+	# # [[file_1_line_1, file_1_line_2, .. , file_1_line_n], 
+	# #  [file_2_line_1, file_2_line_2, .. , file_2_line_n],
+	# #  [file_m_line_1, file_m_line_2, .. , file_m_line_n]]
+    # file_contents_lines = inserter.opener.splitFileContents(file_contents)
     
-    # file_contents_lines: The entire text of each modified file, BUT is a 2D list
-	# 				    obtained by splitlines on each element of file_contents
-	# [[file_1_line_1, file_1_line_2, .. , file_1_line_n], 
-	#  [file_2_line_1, file_2_line_2, .. , file_2_line_n],
-	#  [file_m_line_1, file_m_line_2, .. , file_m_line_n]]
-    file_contents_lines = inserter.opener.splitFileContents(file_contents)
+    # # obtenir patch -pour chaque fichier séparément-
+    # split_patchfile = inserter.diffProcessor.executePatchfileCommand(commit_command) # est une liste de strings (après split diff --git)
+    # print(split_patchfile)
+    # lines_numbers = inserter.diffProcessor.findChangedLinesPerFile(split_patchfile) # 2D list : fichier, lignes changées 
+    # trace_call_Cpp = "SOURCE_CODE_TRACER.trace('patched function called');" # DEVRA CHANGER EN FONCTION DU LANGAGE ET DE LA MÉTHODE APPELÉE
     
-    # obtenir patch -pour chaque fichier séparément-
-    split_patchfile = inserter.diffProcessor.executePatchfileCommand(commit_command) # est une liste de strings (après split diff --git)
-    print(split_patchfile)
-    lines_numbers = inserter.diffProcessor.findChangedLinesPerFile(split_patchfile) # 2D list : fichier, lignes changées 
-    trace_call_Cpp = "SOURCE_CODE_TRACER.trace('patched function called');" # DEVRA CHANGER EN FONCTION DU LANGAGE ET DE LA MÉTHODE APPELÉE
+    # # print(lines_numbers)
+    # # les éléments de première dimension de file_contents_lines doivent correspondre avec ceux
+    # # de split_patchfile.
+    # # retirer éléments vide pour conserver cohérence
+    # split_patchfile, file_contents_lines, lines_numbers = inserter.analyzerSyntax.removeEmptyElements(split_patchfile, file_contents_lines, lines_numbers)
     
-    # print(lines_numbers)
-    # les éléments de première dimension de file_contents_lines doivent correspondre avec ceux
-    # de split_patchfile.
-    # retirer éléments vide pour conserver cohérence
-    split_patchfile, file_contents_lines, lines_numbers = inserter.analyzerSyntax.removeEmptyElements(split_patchfile, file_contents_lines, lines_numbers)
+    # #analyze_python_file(file_contents_lines, lines_numbers)
     
-    #analyze_python_file(file_contents_lines, lines_numbers)
+    # # insérer la trace et sauvegarder fichier tracé
+    # traced_file_contents_lines = copy.deepcopy(file_contents_lines)
+    # traced_file_contents_lines = inserter.insertTraceCpp(traced_file_contents_lines, lines_numbers, trace_call_Cpp)
     
-    # insérer la trace et sauvegarder fichier tracé
-    traced_file_contents_lines = copy.deepcopy(file_contents_lines)
-    traced_file_contents_lines = inserter.insertTraceCpp(traced_file_contents_lines, lines_numbers, trace_call_Cpp)
-    
-    inserter.writeTracedFile(traced_file_contents_lines, filepaths)
+    # inserter.writeTracedFile(traced_file_contents_lines, filepaths)
     
     # # test pour vérifier numéro des lignes tracées
     # inserter.printInsertedLinesNumbers(lines_numbers, traced_file_contents_lines, trace_call_Cpp)

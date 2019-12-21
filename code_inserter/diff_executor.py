@@ -12,14 +12,17 @@ import re
 import subprocess
 import sys
 
+# PARAM: COMMIT ---> from console
+FRAMEWORK_PATH = "scikit-learn"
+
 class DiffExecutor:
 	def getAndFormatCommitNumber(self):
 		"""
 		Parse commit number from the command line and format it
 		like this "commit_number^..commit_number"
 		
-		returns :
-			commit_command : commit number in the format "commit_number^..commit_number"
+		returns:
+			commit_command: commit number in the format "commit_number^..commit_number"
 		"""
 		
 		parser = argparse.ArgumentParser(description='Commits')
@@ -35,26 +38,23 @@ class DiffExecutor:
 		Moves into the framework local repo and return the names of files changed at the commit
 		
 		parameters : 
-			commit_command : commit number in the format "commit_number^..commit_number"
+			commit_command: commit number in the format "commit_number^..commit_number"
 							(example of command : git diff efc3d6b^..efc3d6b)
 
 		returns :
-			filenames : names of file changed at the commit
+			filenames: names of file changed at the commit
+			--> [filename_1, filename_2, ..., filename_n]
 		
 		"""
 		os.chdir("../..")
 		# TODO adapt path towards desired framework Github repo
-		os.chdir("scikit-learn")
+		os.chdir(FRAMEWORK_PATH)
 		result_filenames = subprocess.run(['git', 'diff', "--name-only", commit_command], stdout=subprocess.PIPE)
 		filenames = result_filenames.stdout.decode("utf-8")
 		return filenames
 
-if __name__ == '__main__':
-	differ = DiffExecutor()
-	print("smt for now")
-	commit_command = differ.getAndFormatCommitNumber()
-	filenames = differ.executeChangedFilesPathsDiff(commit_command)
-	
-	print(filenames)
-    
-
+	def diffFilepaths(self):
+		commit_command = self.getAndFormatCommitNumber()
+		filenames = self.executeChangedFilesPathsDiff(commit_command)
+		filepaths = filenames.splitlines()
+		return filepaths
