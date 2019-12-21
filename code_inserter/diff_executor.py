@@ -42,10 +42,10 @@ class DiffExecutor:
 							(example of command : git diff efc3d6b^..efc3d6b)
 
 		returns :
-			filenames: names of file changed at the commit
-			--> [filename_1, filename_2, ..., filename_n]
-		
+			filenames: string of names of files changed at the commit.
+					   Filenames are separated by newlines
 		"""
+
 		os.chdir("../..")
 		# TODO adapt path towards desired framework Github repo
 		os.chdir(FRAMEWORK_PATH)
@@ -54,6 +54,12 @@ class DiffExecutor:
 		return filenames
 
 	def diffFilepaths(self):
+		"""
+		Executes two members methods to obtain the filepaths of changed files
+
+		returns: Paths of files changed at the commit
+			--> [filepath_1, filepath_2, ..., filepath_n]
+		"""
 		commit_command = self.getAndFormatCommitNumber()
 		filenames = self.executeChangedFilesPathsDiff(commit_command)
 		filepaths = filenames.splitlines()
