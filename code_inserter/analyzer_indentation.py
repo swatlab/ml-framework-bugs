@@ -18,10 +18,8 @@ class AnalyzerIndentation:
         number_spaces = self.getIndentationLevel(original_line)
         added_spaces = " " * number_spaces
 
-        print(trace_call)
         for i in len(trace_call):
             trace_call[i] = added_spaces + trace_call[i]
-        print(trace_call)
         return trace_call
 
         # open file to trace
