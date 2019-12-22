@@ -279,31 +279,76 @@ class AnalyzerSyntax:
             real_index = self.increment_real_index(real_index)
 
         self.printInsertableLines(insertable_lines)
+        print(len(insertable_lines))
         return insertable_lines
+
+    def analyze_all_files(self, files_contents_lines):
+        """
+        Run python analysis of syntax on all changed files
+
+        returns:
+        insertable_files_lines: 2D array that will link lines_numbers
+            and code line with their insertability bool.
+        --> [[file_1_bool_1, file_1_bool_2, .. , file_1_bool_n], 
+		    [file_2_bool_1, file_2_bool_2, .. , file_2_bool_p],
+		    [file_m_bool_1, file_m_bool_2, .. , file_m_bool_q]]
+        """
+        
+        insertable_files_lines = []
+        for file_content in files_contents_lines:
+            insertable_lines = self.analyze_python(file_content)
+            insertable_files_lines.append(insertable_lines)
+        return insertable_files_lines
+
+    def check_lines_insertability(self, lines_numbers, insertable_files_lines):
+        to_be_inserted_files_lines = [] # 2D
+        print(len(lines_numbers), len(insertable_files_lines))
+        index = 0
+        for file_number, insertable_lines in zip(lines_numbers, insertable_files_lines):
+            print("iter index", index)
+            to_be_inserted_lines = []
+            for line_number in file_number:
+                print("line_number", line_number)
+                print(len(insertable_lines))
+                if insertable_lines[line_number] == True:
+                    to_be_inserted_lines.append(line_number)
+                else: # keep array structure consistency
+                    to_be_inserted_lines.append(None)
+            to_be_inserted_files_lines.append(to_be_inserted_lines)
+            index = index + 1
+
+        # for index1D, file_numbers in enumerate(lines_numbers):
+        #     inserted_lines = []
+        #     print("iteration index ", index1D)
+        #     for line_number in file_numbers:
+        #         print("line_number", line_number)
+        #         if insertable_files_lines[index1D][line_number] == True:
+        #             inserted_lines.append(line_number)
+        #     inserted_files_lines.append(inserted_lines)
+        return to_be_inserted_files_lines
 
     def analyze_syntax_python(self, lines_numbers, files_contents_lines):
 
-        # insertable_files_lines: 2D array
-        insertable_files_lines = []
-        for file_content_line in files_contents_lines:
-            insertable_files_lines.append(self.analyze_python(file_content_line))
+        insertable_files_lines = self.analyze_all_files(files_contents_lines)
 
-        print(insertable_files_lines)
+        to_be_inserted_files_lines = self.check_lines_insertability(lines_numbers, insertable_files_lines)
+        
+
+
         # lines_numbers contains real_indexes
-        inserted_files_lines = [] # 2D
-        index1D = 0
-        for file_numbers in lines_numbers:
-            inserted_lines = []
-            print("insertable file", file_numbers)
-            for line_number in file_numbers:
-                if insertable_files_lines[index1D][line_number] == True:
-                    inserted_lines.append(line_number)
-                    print("insertable line", line_number)
-            inserted_files_lines.append(inserted_lines)
-            index1D = index1D + 1
+        
+        
+
+        # for index1D, file_numbers in enumerate(lines_numbers):
+        #     inserted_lines = []
+        #     print("iteration index ", index1D)
+        #     for line_number in file_numbers:
+        #         print("line_number", line_number)
+        #         if insertable_files_lines[index1D][line_number] == True:
+        #             inserted_lines.append(line_number)
+        #     inserted_files_lines.append(inserted_lines)
             
-        inserted_files_lines = list(filter(None, inserted_files_lines))
-        return inserted_files_lines
+        return to_be_inserted_files_lines
 
 # if __name__ == '__main__':
 # 	opener = FileOpener()
