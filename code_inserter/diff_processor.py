@@ -59,7 +59,13 @@ class DiffProcessor:
 		
 		for matchNum, match in enumerate(matches, start=1):
 			# print(int(match.group(1))) # debug which lines are modified
-			number = int(match.group(1)) - 1
+			number = int(match.group(1))
+
+			# adjust number, indexes are line_number - 1
+			# don't adjust 0, because will end up -1
+			if number != 0:
+				number = int(match.group(1)) - 1
+
 			line_numbers.append(number)
 		return line_numbers
 
