@@ -353,3 +353,5 @@ class AnalyzerSyntax:
         insertable_files_lines = self.analyze_all_files(files_contents_lines)
         to_be_inserted_files_lines = self.check_lines_insertability(lines_numbers, insertable_files_lines)
         return to_be_inserted_files_lines
+
+# Old analyze_syntax code (was removed at 0450408) : checkout 5b35ca6

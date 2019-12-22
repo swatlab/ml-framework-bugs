@@ -28,41 +28,7 @@ class Inserter:
 		self.diffProcessor = DiffProcessor()
 		self.opener = FileOpener()
 
-	def insertTrace(self, traced_file_contents_lines, lines_numbers, trace_call_Cpp):
-		"""
-		goes through the traced_file_contents_lines (copy of file_contents_lines) and add
-		trace calls at the lines_numbers
-		returns the inserted traced_file_contents_lines
-		"""
-		for traced_file_content_line, line_number in zip(traced_file_contents_lines, lines_numbers):
-			# adding of tracer.trace call on a inverted list to conserve the lines numbers (by adding from the end,  
-			# the lines numbers doesn't shift)
-			[traced_file_content_line.insert(n, trace_call_Cpp) for n in line_number[::-1]]
-		return traced_file_contents_lines
-
-	def writeTracedFile(self, traced_file_contents_lines, filepaths, overwrite = False):
-		"""
-		write the traced files in new files
-		"""
-		for traced_file_content_line, filepath in zip(traced_file_contents_lines, filepaths):
-			traced_file_content = ("\n".join(traced_file_content_line))
-			
-			filename, file_extension = os.path.splitext(filepath)
-			
-			# Concatenate in a new file
-			new_file_path = filepath if overwrite else "{}_traced{}".format(filename, file_extension)
-			new_file = open(new_file_path, "w")
-			new_file.write(traced_file_content)
-			print(new_file_path, " is written.")
-			new_file.close()
-
-	def printInsertedLinesNumbers(self, lines_numbers, traced_file_contents_line, trace_call_Cpp):
-		print("Original file patched lines : \n", lines_numbers)
-		indicesa = [i for i, x in enumerate(traced_file_contents_lines[0]) if x == trace_call_Cpp]
-		indicesb = [i for i, x in enumerate(traced_file_contents_lines[1]) if x == trace_call_Cpp]
-		print("Trace.trace() is inserted at these lines : \n" ,indicesa, indicesb)
-
-
+	# Old insert trace code : checkout 0450408
 
 	def insertTraces(self, filepaths, commit_number, to_be_inserted_files_lines, files_contents_lines):
 		# TODO find a way to use various models
