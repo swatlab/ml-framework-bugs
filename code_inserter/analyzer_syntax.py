@@ -278,7 +278,8 @@ class AnalyzerSyntax:
             numeric_index = self.increment_numeric_index(numeric_index)
             real_index = self.increment_real_index(real_index)
 
-        self.printInsertableLines(insertable_lines)
+        # this function call will be useful for analyze_python() maintainance
+        # self.printInsertableLines(insertable_lines)
         print(len(insertable_lines))
         return insertable_lines
 
@@ -301,7 +302,9 @@ class AnalyzerSyntax:
         return insertable_files_lines
 
     def print_to_be_inserted_validity(self, lines_numbers, to_be_inserted_files_lines):
-        # debug : check if lines_numbers and to_be are same dimensions
+        """
+        [FOR DEBUG] check if lines_numbers and to_be are same dimensions
+        """
         print("lines_numbers and to_be_inserted_files_lines")
         print(len(lines_numbers), len(to_be_inserted_files_lines))
         for l, t in zip(lines_numbers, to_be_inserted_files_lines):
