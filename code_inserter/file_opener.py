@@ -33,7 +33,8 @@ class FileOpener:
 		"""
 		Uses file_contents to split the file content into lines
 		
-		returns : The entire text of each modified file, BUT is a 2D list
+		returns:
+		files_contents_lines: The entire text of each modified file, BUT is a 2D list
 		 			obtained by splitlines on each element of file_contents
 		--> [[file_1_line_1, file_1_line_2, .. , file_1_line_n], 
 			[file_2_line_1, file_2_line_2, .. , file_2_line_n],

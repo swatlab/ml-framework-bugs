@@ -280,7 +280,6 @@ class AnalyzerSyntax:
 
         # this function call will be useful for analyze_python() maintainance
         # self.printInsertableLines(insertable_lines)
-        print(len(insertable_lines))
         return insertable_lines
 
     def print_to_be_inserted_validity(self, lines_numbers, to_be_inserted_files_lines):
@@ -335,20 +334,14 @@ class AnalyzerSyntax:
 			[file_m_line_number_1, file_m_line_number_2, .. , file_m_line_number_q]]
         """
         to_be_inserted_files_lines = [] # 2D
-        print(len(lines_numbers), len(insertable_files_lines))
-        index = 0
         for file_number, insertable_lines in zip(lines_numbers, insertable_files_lines):
-            print("iter index", index)
             to_be_inserted_lines = []
             for line_number in file_number:
-                print("line_number", line_number)
-                print(len(insertable_lines))
                 if insertable_lines[line_number] == True:
                     to_be_inserted_lines.append(line_number)
                 else: # keep array structure consistency
                     to_be_inserted_lines.append(None)
             to_be_inserted_files_lines.append(to_be_inserted_lines)
-            index = index + 1
 
         return to_be_inserted_files_lines
 
