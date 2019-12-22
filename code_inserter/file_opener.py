@@ -47,6 +47,5 @@ class FileOpener:
 	def openFiles(self, filepaths):
 		files_contents = self.getFileContents(filepaths)
 		files_contents_lines = self.splitFileContents(files_contents)
-		files_contents_lines = list(filter(None, files_contents_lines))
 		return files_contents_lines
 
