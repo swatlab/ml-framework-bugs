@@ -283,6 +283,15 @@ class AnalyzerSyntax:
         print(len(insertable_lines))
         return insertable_lines
 
+    def print_to_be_inserted_validity(self, lines_numbers, to_be_inserted_files_lines):
+        """
+        [FOR DEBUG] check if lines_numbers and to_be are same dimensions
+        """
+        print("lines_numbers and to_be_inserted_files_lines")
+        print(len(lines_numbers), len(to_be_inserted_files_lines))
+        for l, t in zip(lines_numbers, to_be_inserted_files_lines):
+            print(len(l), len(t))
+
     def analyze_all_files(self, files_contents_lines):
         """
         Run self.analyze_python() on all changed files
@@ -300,15 +309,6 @@ class AnalyzerSyntax:
             insertable_lines = self.analyze_python(file_content)
             insertable_files_lines.append(insertable_lines)
         return insertable_files_lines
-
-    def print_to_be_inserted_validity(self, lines_numbers, to_be_inserted_files_lines):
-        """
-        [FOR DEBUG] check if lines_numbers and to_be are same dimensions
-        """
-        print("lines_numbers and to_be_inserted_files_lines")
-        print(len(lines_numbers), len(to_be_inserted_files_lines))
-        for l, t in zip(lines_numbers, to_be_inserted_files_lines):
-            print(len(l), len(t))
 
     def check_lines_insertability(self, lines_numbers, insertable_files_lines):
         """

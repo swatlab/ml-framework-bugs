@@ -37,6 +37,7 @@ class Inserter:
 		'with open("/home/kacham/Documents/tracelogs/tracelog_" + commit_number + "_" + model_name + ".txt", "a") as myfile:',
 		'    myfile.write(model_name + " in  line  called \n")']
 		
+		# 
 		for to_be_inserted_file, file_content in zip(to_be_inserted_files_lines, files_contents_lines):
 			for to_be_inserted_line in to_be_inserted_file:
 				if to_be_inserted_line != None: # that means : line can be inserted
@@ -46,6 +47,7 @@ class Inserter:
 
 					# insert trace call
 					file_content.insert(to_be_inserted_line, trace_call)
+					
 		# Now files_contents_lines contains all inserted traces. 
 		# Write the array elements in the files
 		# for 
@@ -71,8 +73,6 @@ if __name__ == '__main__':
 	# 	[file_2_line_number_1, file_2_line_number_2, .. , file_2_line_number_n],
 	# 	[file_m_line_number_1, file_m_line_number_2, .. , file_m_line_number_n]]
 	lines_numbers = inserter.diffProcessor.diffLinesNumbers(commit_command)
-	# TODO DEBUG seulement 37 a changé, pas les autres ... 
-	# print(lines_numbers)
     
 	# file_contents_lines: The entire text of each modified file, BUT is a 2D list
 	# 				    obtained by splitlines on each element of file_contents
@@ -86,7 +86,6 @@ if __name__ == '__main__':
 	# [file_2_line_number_1, file_2_line_number_2, .. , file_2_line_number_n],
 	# [file_m_line_number_1, file_m_line_number_2, .. , file_m_line_number_n]]
 	to_be_inserted_files_lines = inserter.analyzerSyntax.analyze_syntax_python(lines_numbers, files_contents_lines)
-    # #analyze_python_file(file_contents_lines, lines_numbers)
     
 	inserter.insertTraces(filepaths, commit_number, to_be_inserted_files_lines, files_contents_lines)
     # # insérer la trace et sauvegarder fichier tracé
