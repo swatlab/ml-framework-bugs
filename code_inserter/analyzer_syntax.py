@@ -284,7 +284,7 @@ class AnalyzerSyntax:
 
     def analyze_all_files(self, files_contents_lines):
         """
-        Run python analysis of syntax on all changed files
+        Run self.analyze_python() on all changed files
 
         returns:
         insertable_files_lines: 2D array that will link lines_numbers
@@ -300,7 +300,37 @@ class AnalyzerSyntax:
             insertable_files_lines.append(insertable_lines)
         return insertable_files_lines
 
+    def print_to_be_inserted_validity(self, lines_numbers, to_be_inserted_files_lines):
+        # debug : check if lines_numbers and to_be are same dimensions
+        print("lines_numbers and to_be_inserted_files_lines")
+        print(len(lines_numbers), len(to_be_inserted_files_lines))
+        for l, t in zip(lines_numbers, to_be_inserted_files_lines):
+            print(len(l), len(t))
+
     def check_lines_insertability(self, lines_numbers, insertable_files_lines):
+        """
+        For all lines in lines_numbers, use insertable_files_lines to check if
+        they can be inserted with a trace call.
+
+        params: 
+		lines_numbers: changed lines of every file
+		--> [[file_1_line_number_1, file_1_line_number_2, .. , file_1_line_number_n], 
+			[file_2_line_number_1, file_2_line_number_2, .. , file_2_line_number_p],
+			[file_m_line_number_1, file_m_line_number_2, .. , file_m_line_number_q]]
+
+        insertable_files_lines: 2D array that will link lines_numbers
+            and code line with their insertability bool.
+        --> [[file_1_bool_1, file_1_bool_2, .. , file_1_bool_n], 
+		    [file_2_bool_1, file_2_bool_2, .. , file_2_bool_p],
+		    [file_m_bool_1, file_m_bool_2, .. , file_m_bool_q]]
+
+        returns:
+        to_be_inserted_files_lines: same thing as lines_numbers, but the element
+        will be None if the line cannot be inserted
+		--> [[file_1_line_number_1, file_1_line_number_2, .. , file_1_line_number_n], 
+			[file_2_line_number_1, file_2_line_number_2, .. , file_2_line_number_p],
+			[file_m_line_number_1, file_m_line_number_2, .. , file_m_line_number_q]]
+        """
         to_be_inserted_files_lines = [] # 2D
         print(len(lines_numbers), len(insertable_files_lines))
         index = 0
@@ -317,47 +347,12 @@ class AnalyzerSyntax:
             to_be_inserted_files_lines.append(to_be_inserted_lines)
             index = index + 1
 
-        # for index1D, file_numbers in enumerate(lines_numbers):
-        #     inserted_lines = []
-        #     print("iteration index ", index1D)
-        #     for line_number in file_numbers:
-        #         print("line_number", line_number)
-        #         if insertable_files_lines[index1D][line_number] == True:
-        #             inserted_lines.append(line_number)
-        #     inserted_files_lines.append(inserted_lines)
         return to_be_inserted_files_lines
 
     def analyze_syntax_python(self, lines_numbers, files_contents_lines):
-
         insertable_files_lines = self.analyze_all_files(files_contents_lines)
-
         to_be_inserted_files_lines = self.check_lines_insertability(lines_numbers, insertable_files_lines)
-        
-
-
-        # lines_numbers contains real_indexes
-        
-        
-
-        # for index1D, file_numbers in enumerate(lines_numbers):
-        #     inserted_lines = []
-        #     print("iteration index ", index1D)
-        #     for line_number in file_numbers:
-        #         print("line_number", line_number)
-        #         if insertable_files_lines[index1D][line_number] == True:
-        #             inserted_lines.append(line_number)
-        #     inserted_files_lines.append(inserted_lines)
-            
         return to_be_inserted_files_lines
-
-# if __name__ == '__main__':
-# 	opener = FileOpener()
-# 	analyzer_syntax = AnalyzerSyntax()
-# 	filepaths = ["naive_bayes.py"]
-# 	files_contents = opener.getFileContents(filepaths) # 1D
-# 	files_contents_lines = opener.splitFileContents(files_contents) # 2D
-# 	analyzer_syntax.analyze_syntax_python(files_contents_lines[0])
-
 
 """
 	----------------------- code syntax analyzer ------------------------
