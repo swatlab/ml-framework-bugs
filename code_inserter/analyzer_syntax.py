@@ -339,7 +339,7 @@ class AnalyzerSyntax:
             for line_number in file_number:
                 if insertable_lines[line_number] == True:
                     to_be_inserted_lines.append(line_number)
-                else: # keep array structure consistency
+                else: # keep array structure consistent
                     to_be_inserted_lines.append(None)
             to_be_inserted_files_lines.append(to_be_inserted_lines)
 

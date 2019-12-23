@@ -57,20 +57,21 @@ class Inserter:
 		# check if line is insertable
 		# if yes, insert trace in files_contents_lines
 		traced_files_contents_lines = copy.deepcopy(files_contents_lines)
-		index=0
+		index = 0
 		for to_be_inserted_file, file_content in zip(to_be_inserted_files_lines, files_contents_lines):
 			for to_be_inserted_line in to_be_inserted_file:
+				print("\n \n \n", filepaths[index])
 				print(to_be_inserted_line)
 				if to_be_inserted_line != None: # that means : line can be inserted
 					# add indentation level
 					original_line = file_content[to_be_inserted_line]
-					trace_call = self.analyzerIndentation.addIndentationLevel(original_line, trace_call)
+					trace_call_spaced = self.analyzerIndentation.addIndentationLevel(original_line, trace_call)
 
 					# insert trace call
 					#print(" INDEX ", index, " \n", file_content)
 					trace_index = 0
-					for trace in trace_call: 
-						traced_files_contents_lines[index].insert(to_be_inserted_line + trace_index, trace)
+					for trace in trace_call_spaced: 
+						traced_files_contents_lines[index].insert(to_be_inserted_line + 1 + trace_index, trace)
 						trace_index = trace_index + 1
 			index = index + 1
 
