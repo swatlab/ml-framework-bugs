@@ -17,11 +17,13 @@ class AnalyzerIndentation:
     def addIndentationLevel(self, original_line, trace_call):
         # apply same level of indentation
         number_spaces = self.getIndentationLevel(original_line)
-        print("nbr spaces : ", number_spaces)
-        added_spaces = " " * number_spaces
-
+        
+        new_trace_call = []
+        index_new_trace_call = 0
         for trace_line in trace_call:
-            trace_line = added_spaces + trace_line
-        return trace_call
+            added_space_length = len(trace_line) + number_spaces    # will be adding 10 extra spaces
+            new_trace_call.append(trace_line.rjust(added_space_length))
+            index_new_trace_call = index_new_trace_call + 1
+        return new_trace_call
 
 # Old is_unindented_insertable() and python_auto_insert.py : checkout 6538f42
