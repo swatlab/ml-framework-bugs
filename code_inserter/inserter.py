@@ -51,7 +51,7 @@ class Inserter:
 		trace_call = ['model_name = "GaussianNB"',
 		'print("TRACER WAS CALLED")',
 		'with open("/home/kacham/Documents/tracelogs/tracelog_" + commit_number + "_" + model_name + ".txt", "a") as myfile:',
-		'    myfile.write(model_name + " in  line  called \n")']
+		'    myfile.write(model_name + " in  line  called \n")'.encode("unicode_escape").decode("utf-8")]
 		
 		# Iterate through files-line in to_be_inserted_files_lines,
 		# check if line is insertable
