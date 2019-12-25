@@ -11,12 +11,13 @@ class AnalyzerIndentation:
         returns the number of leading spaces in code_line (one line of code)
         reference: https://stackoverflow.com/a/13649013/9876427
         """
-        print(code_line)
+        print("the code line : ", code_line)
         return len(code_line) - len(code_line.lstrip(" "))
 
     def addIndentationLevel(self, original_line, trace_call):
         # apply same level of indentation
         number_spaces = self.getIndentationLevel(original_line)
+        print("step 3 spaces : ", number_spaces)
         
         new_trace_call = []
         index_new_trace_call = 0

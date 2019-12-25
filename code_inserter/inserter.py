@@ -59,9 +59,9 @@ class Inserter:
 		traced_files_contents_lines = copy.deepcopy(files_contents_lines)
 		index = 0
 		for to_be_inserted_file, file_content in zip(to_be_inserted_files_lines, files_contents_lines):
-			for to_be_inserted_line in to_be_inserted_file:
-				print("\n \n \n", filepaths[index])
-				print(to_be_inserted_line)
+			for to_be_inserted_line in reversed(to_be_inserted_file):
+				print("\nstep 1 filepath :", filepaths[index])
+				print("step 2 to be inserted line : ", to_be_inserted_line)
 				if to_be_inserted_line != None: # that means : line can be inserted
 					# add indentation level
 					original_line = file_content[to_be_inserted_line]
