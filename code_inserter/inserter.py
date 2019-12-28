@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 The main file of the code_inserter. The main function executes
-all the calls of the modules' main functions
+all of the modules' main functions
 
 Execute code:
 	python inserter.py commit_number
@@ -33,9 +33,28 @@ class Inserter:
 
 	# Old insert trace code : checkout 0450408
 
+	def overwriteTracedFiles(self, traced_files_contents_lines, filepaths):
+		"""
+		Overwrite the framework's original code with the trace-inserted code.
+
+		params: 
+		  - traced_files_contents_lines: trace-inserted code
+		  - filepaths: paths of to be 'trace-inserted' files
+		"""
+		for traced_file_content, filepath in zip(traced_files_contents_lines, filepaths):
+			# copy file_content array in a string
+			new_file_content = "\n".join(traced_file_content)
+			
+			# empty the file. Reference: https://stackoverflow.com/a/30604077/9876427 
+			with open(filepath, 'w'): pass
+
+			# write over it
+			with open(filepath, "w") as text_file:
+				text_file.write("{0}".format(new_file_content))
+
 	def insertTraces(self, filepaths, commit_number, to_be_inserted_files_lines, files_contents_lines):
 		"""
-		Use the to_be_inserted_files_lines to insert trace_call in the files_contents_lines
+		[MAIN] Use the to_be_inserted_files_lines to insert trace_call in the files_contents_lines
 		(from end of file_content to beginning of file_content)
 		and then overwrite the original code with overwriteTracedFiles()
 
@@ -88,25 +107,6 @@ class Inserter:
 		# Now files_contents_lines contains all inserted traces. 
 		# Write each element of traced_files_contents_lines in the framework code's files
 		self.overwriteTracedFiles(traced_files_contents_lines, filepaths)
-
-	def overwriteTracedFiles(self, traced_files_contents_lines, filepaths):
-		"""
-		Overwrite the framework's original code with the trace-inserted code.
-
-		params: 
-		  - traced_files_contents_lines: trace-inserted code
-		  - filepaths: paths of to be 'trace-inserted' files
-		"""
-		for traced_file_content, filepath in zip(traced_files_contents_lines, filepaths):
-			# copy file_content array in a string
-			new_file_content = "\n".join(traced_file_content)
-			
-			# empty the file. Reference: https://stackoverflow.com/a/30604077/9876427 
-			with open(filepath, 'w'): pass
-
-			# write over it
-			with open(filepath, "w") as text_file:
-				text_file.write("{0}".format(new_file_content))
 
 if __name__ == '__main__':
 	inserter = Inserter()
