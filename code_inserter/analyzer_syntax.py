@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Aug 14 15:19:31 2019
+The main file of the code_inserter. The main function executes
+all of the modules' main functions
 
-@author: kevin
+Execute code:
+	python inserter.py commit_number
+	example: py inserter.py 9e5819a
 """
 
 # https://docs.python.org/2/library/trace.html
@@ -22,7 +25,6 @@ class AnalyzerSyntax:
         matches an empty
         returns true if there is only one match
         """
-        # the def regex is different to handle multi-line def 
         empty_line_regex = r"^\s*$"
         empty_line_match = re.findall(empty_line_regex, test_str, re.MULTILINE)
         return len(empty_line_match) == 1
@@ -140,7 +142,6 @@ class AnalyzerSyntax:
         matches a def, an if, ... or a while in the test_str (one line of code)
         returns true if there is no match (the line is a normal code line)
         """
-        # the def regex is different to handle multi-line def 
         regex = r"(def \w+\(.*|if .+:|elif .+:|else.+:|try:|except \w+:|for .+:|while .+:|class .+:)"
         function_matches = re.findall(regex, test_str, re.MULTILINE)
         return len(function_matches) == 0
@@ -167,9 +168,6 @@ class AnalyzerSyntax:
     def increment_numeric_index(self, numeric_index):
         return numeric_index + 1
 
-    def increment_real_index(self, real_index):
-        return real_index + 1
-
     def analyze_python(self, code_lines):
         """
         Checks every line of a file file_content_lines (1D array, because
@@ -178,15 +176,17 @@ class AnalyzerSyntax:
         indicates if the corresponding line in file_content_lines
         can have a trace call at the next line (real line + 1)
 
-        Param: a 1D array of the files lines
-        --> [file_line_1, file_line_2, .. , file_line_n]
+        params:
+          - code_lines: a 1D array of the files lines
+            --> [file_line_1, file_line_2, .. , file_line_n]
 
-        returns: a 1D array that indicates insertability of each
-                 corresponding line
-        --> [True/False, True/False, .. , True/False]
+        returns:
+          - insertable_lines: a 1D array that indicates insertability of each
+            corresponding line
+            --> [True/False, True/False, .. , True/False]
         """
         numeric_index = 0 # you count from 0 in python
-        real_index = 1 # you count from 1 for line numbers
+        # real_index = 1 # you count from 1 for line numbers
         max_numeric_index = len(code_lines)
         insertable_lines = [None] * len(code_lines)
 
@@ -208,17 +208,15 @@ class AnalyzerSyntax:
                 insertable_lines[numeric_index] = False
 
                 # therefore, increment to next line
-                # increment indexes
+                # increment index
                 numeric_index = self.increment_numeric_index(numeric_index)
-                real_index = self.increment_real_index(real_index)
                 test_str = code_lines[numeric_index]
 
                 while self.is_multiline_middle(test_str) and numeric_index < max_numeric_index:
                     insertable_lines[numeric_index] = False
                     # therefore, go to next line
-                    # increment indexes
+                    # increment index
                     numeric_index = self.increment_numeric_index(numeric_index)
-                    real_index = self.increment_real_index(real_index)
                     test_str = code_lines[numeric_index]
                 
                 # at the end of the while, we reach the ending ) or ] or }, therefore we 
@@ -239,17 +237,15 @@ class AnalyzerSyntax:
                 insertable_lines[numeric_index] = False
 
                 # therefore, increment to next line
-                # increment indexes
+                # increment index
                 numeric_index = self.increment_numeric_index(numeric_index)
-                real_index = self.increment_real_index(real_index)
                 test_str = code_lines[numeric_index]
 
                 while not self.is_docstring_delimiter(test_str) and numeric_index < max_numeric_index:
                     insertable_lines[numeric_index] = False
                     # therefore, go to next line
-                    # increment indexes
+                    # increment index
                     numeric_index = self.increment_numeric_index(numeric_index)
-                    real_index = self.increment_real_index(real_index)
                     test_str = code_lines[numeric_index]
                 
                 # at the end of the while, we reach the ending """, therefore we 
@@ -274,9 +270,8 @@ class AnalyzerSyntax:
                 insertable_lines[numeric_index] = True
 
             # end of checks for the current line
-            # increment indexes
+            # increment index
             numeric_index = self.increment_numeric_index(numeric_index)
-            real_index = self.increment_real_index(real_index)
 
         # this function call will be useful for analyze_python() maintainance
         # self.printInsertableLines(insertable_lines)
@@ -296,11 +291,11 @@ class AnalyzerSyntax:
         Run self.analyze_python() on all changed files
 
         returns:
-        insertable_files_lines: 2D array that will link lines_numbers
+          - insertable_files_lines: 2D array that will link lines_numbers
             and code line with their insertability bool.
-        --> [[file_1_bool_1, file_1_bool_2, .. , file_1_bool_n], 
-		    [file_2_bool_1, file_2_bool_2, .. , file_2_bool_p],
-		    [file_m_bool_1, file_m_bool_2, .. , file_m_bool_q]]
+            --> [[file_1_bool_1, file_1_bool_2, .. , file_1_bool_n], 
+                [file_2_bool_1, file_2_bool_2, .. , file_2_bool_p],
+                [file_m_bool_1, file_m_bool_2, .. , file_m_bool_q]]
         """
         
         insertable_files_lines = []
@@ -315,23 +310,23 @@ class AnalyzerSyntax:
         they can be inserted with a trace call.
 
         params: 
-		lines_numbers: changed lines of every file
-		--> [[file_1_line_number_1, file_1_line_number_2, .. , file_1_line_number_n], 
-			[file_2_line_number_1, file_2_line_number_2, .. , file_2_line_number_p],
-			[file_m_line_number_1, file_m_line_number_2, .. , file_m_line_number_q]]
+		  - lines_numbers: changed lines of every file
+            --> [[file_1_line_number_1, file_1_line_number_2, .. , file_1_line_number_n], 
+                [file_2_line_number_1, file_2_line_number_2, .. , file_2_line_number_p],
+                [file_m_line_number_1, file_m_line_number_2, .. , file_m_line_number_q]]
 
-        insertable_files_lines: 2D array that will link lines_numbers
+          - insertable_files_lines: 2D array that will link lines_numbers
             and code line with their insertability bool.
-        --> [[file_1_bool_1, file_1_bool_2, .. , file_1_bool_n], 
-		    [file_2_bool_1, file_2_bool_2, .. , file_2_bool_p],
-		    [file_m_bool_1, file_m_bool_2, .. , file_m_bool_q]]
+            --> [[file_1_bool_1, file_1_bool_2, .. , file_1_bool_n], 
+                [file_2_bool_1, file_2_bool_2, .. , file_2_bool_p],
+                [file_m_bool_1, file_m_bool_2, .. , file_m_bool_q]]
 
         returns:
-        to_be_inserted_files_lines: same thing as lines_numbers, but the element
-        will be None if the line cannot be inserted
-		--> [[file_1_line_number_1, file_1_line_number_2, .. , file_1_line_number_n], 
-			[file_2_line_number_1, file_2_line_number_2, .. , file_2_line_number_p],
-			[file_m_line_number_1, file_m_line_number_2, .. , file_m_line_number_q]]
+          - to_be_inserted_files_lines: same thing as lines_numbers, but the element
+            will be None if the line cannot be inserted
+            --> [[file_1_line_number_1, file_1_line_number_2, .. , file_1_line_number_n], 
+                [file_2_line_number_1, file_2_line_number_2, .. , file_2_line_number_p],
+                [file_m_line_number_1, file_m_line_number_2, .. , file_m_line_number_q]]
         """
         to_be_inserted_files_lines = [] # 2D
         for file_number, insertable_lines in zip(lines_numbers, insertable_files_lines):
@@ -346,6 +341,9 @@ class AnalyzerSyntax:
         return to_be_inserted_files_lines
 
     def analyze_syntax_python(self, lines_numbers, files_contents_lines):
+        """
+        [MAIN]
+        """
         insertable_files_lines = self.analyze_all_files(files_contents_lines)
         to_be_inserted_files_lines = self.check_lines_insertability(lines_numbers, insertable_files_lines)
         return to_be_inserted_files_lines
