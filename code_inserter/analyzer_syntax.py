@@ -1,23 +1,10 @@
 # -*- coding: utf-8 -*-
-"""
-The main file of the code_inserter. The main function executes
-all of the modules' main functions
-
-Execute code:
-	python inserter.py commit_number
-	example: py inserter.py 9e5819a
-"""
 
 # https://docs.python.org/2/library/trace.html
 # https://docs.python.org/3.0/library/trace.html
 
 from file_opener import FileOpener
-import argparse
-import copy
-import os
 import re
-import subprocess
-import sys
 
 class AnalyzerSyntax:
     def is_empty_line(self, test_str):
@@ -165,6 +152,15 @@ class AnalyzerSyntax:
             for item in insertable_lines:
                 f.write("%s\n" % item)
 
+    def print_to_be_inserted_validity(self, lines_numbers, to_be_inserted_files_lines):
+        """
+        [FOR DEBUG] check if lines_numbers and to_be are same dimensions
+        """
+        print("lines_numbers and to_be_inserted_files_lines")
+        print(len(lines_numbers), len(to_be_inserted_files_lines))
+        for l, t in zip(lines_numbers, to_be_inserted_files_lines):
+            print(len(l), len(t))
+
     def increment_numeric_index(self, numeric_index):
         return numeric_index + 1
 
@@ -277,18 +273,16 @@ class AnalyzerSyntax:
         # self.printInsertableLines(insertable_lines)
         return insertable_lines
 
-    def print_to_be_inserted_validity(self, lines_numbers, to_be_inserted_files_lines):
-        """
-        [FOR DEBUG] check if lines_numbers and to_be are same dimensions
-        """
-        print("lines_numbers and to_be_inserted_files_lines")
-        print(len(lines_numbers), len(to_be_inserted_files_lines))
-        for l, t in zip(lines_numbers, to_be_inserted_files_lines):
-            print(len(l), len(t))
-
     def analyze_all_files(self, files_contents_lines):
         """
         Run self.analyze_python() on all changed files
+
+        params:
+           - files_contents_lines: The entire text of each modified file, BUT is a 2D list
+		 	obtained by splitlines on each element of file_contents
+			--> [[file_1_line_1, file_1_line_2, .. , file_1_line_n], 
+				[file_2_line_1, file_2_line_2, .. , file_2_line_n],
+				[file_m_line_1, file_m_line_2, .. , file_m_line_n]]
 
         returns:
           - insertable_files_lines: 2D array that will link lines_numbers
@@ -342,7 +336,28 @@ class AnalyzerSyntax:
 
     def analyze_syntax_python(self, lines_numbers, files_contents_lines):
         """
-        [MAIN]
+        [MAIN] Analyze all files syntax by assign an insertability boolean to
+        each line of each file. Then, call check_lines_insertability() to
+        check the insertability of each changed line of lines_numbers
+
+        params: 
+		  - lines_numbers: changed lines of every file
+            --> [[file_1_line_number_1, file_1_line_number_2, .. , file_1_line_number_n], 
+                [file_2_line_number_1, file_2_line_number_2, .. , file_2_line_number_p],
+                [file_m_line_number_1, file_m_line_number_2, .. , file_m_line_number_q]]
+                
+          - files_contents_lines: The entire text of each modified file, BUT is a 2D list
+		 	obtained by splitlines on each element of file_contents
+			--> [[file_1_line_1, file_1_line_2, .. , file_1_line_n], 
+				[file_2_line_1, file_2_line_2, .. , file_2_line_n],
+				[file_m_line_1, file_m_line_2, .. , file_m_line_n]]
+
+        returns:
+          - to_be_inserted_files_lines: same thing as lines_numbers, but the element
+            will be None if the line cannot be inserted
+            --> [[file_1_line_number_1, file_1_line_number_2, .. , file_1_line_number_n], 
+                [file_2_line_number_1, file_2_line_number_2, .. , file_2_line_number_p],
+                [file_m_line_number_1, file_m_line_number_2, .. , file_m_line_number_q]]
         """
         insertable_files_lines = self.analyze_all_files(files_contents_lines)
         to_be_inserted_files_lines = self.check_lines_insertability(lines_numbers, insertable_files_lines)
