@@ -78,9 +78,9 @@ class DiffProcessor:
 		
 		returns:
 		  - lines_numbers: changed lines of every file
-		--> [[file_1_line_number_1, file_1_line_number_2, .. , file_1_line_number_n], 
-			[file_2_line_number_1, file_2_line_number_2, .. , file_2_line_number_p],
-			[file_m_line_number_1, file_m_line_number_2, .. , file_m_line_number_q]]
+			--> [[file_1_line_number_1, file_1_line_number_2, .. , file_1_line_number_n], 
+				[file_2_line_number_1, file_2_line_number_2, .. , file_2_line_number_p],
+				[file_m_line_number_1, file_m_line_number_2, .. , file_m_line_number_q]]
 		"""
 		lines_numbers = []
 		for split_patch in split_patchfile:
@@ -98,9 +98,9 @@ class DiffProcessor:
 
 		returns:
 		  - lines_numbers: changed lines of every file
-		--> [[file_1_line_number_1, file_1_line_number_2, .. , file_1_line_number_n], 
-			[file_2_line_number_1, file_2_line_number_2, .. , file_2_line_number_p],
-			[file_m_line_number_1, file_m_line_number_2, .. , file_m_line_number_q]]
+			--> [[file_1_line_number_1, file_1_line_number_2, .. , file_1_line_number_n], 
+				[file_2_line_number_1, file_2_line_number_2, .. , file_2_line_number_p],
+				[file_m_line_number_1, file_m_line_number_2, .. , file_m_line_number_q]]
 		"""
 		split_patchfile = self.executePatchfileCommand(commit_command)
 		# remove empty elements caused by string.split()
