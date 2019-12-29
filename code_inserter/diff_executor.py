@@ -48,9 +48,13 @@ class DiffExecutor:
 
 	def diffFilepaths(self):
 		"""
-		Executes two members methods to obtain the filepaths of changed files
+		[MAIN] Executes two class methods to obtain the filepaths of changed files.
 
-		returns: Paths of files changed at the commit
+		returns:
+		  - commit_number: commit SHA
+		  - commit_command: commit argument for git diff command
+			--> example of command : git diff fe31832^..fe31832
+		  - filepaths: paths of all the changed files at commit
 			--> [filepath_1, filepath_2, ..., filepath_n]
 		"""
 		commit_number, commit_command = self.getAndFormatCommitNumber()

@@ -5,6 +5,10 @@ class FileOpener:
 		"""
 		Opens all the changed files and obtain their text
 		
+		params:
+		  - filepaths: paths of all the changed files at commit
+			--> [filepath_1, filepath_2, ..., filepath_n]
+
 		returns:
 		  - files_contents: a 1D list of strings, obtained after reading entirely each file
 			--> [file_1_content, file_2_content, .. , file_n_content]
@@ -40,7 +44,8 @@ class FileOpener:
 		splitFileContents() splits each text in lines.
 		
 		params:
-		  - filepaths: paths of all the changed files
+		  - filepaths: paths of all the changed files at commit
+			--> [filepath_1, filepath_2, ..., filepath_n]
 		
 		returns:
 		  - files_contents_lines: The entire text of each modified file, BUT is a 2D list

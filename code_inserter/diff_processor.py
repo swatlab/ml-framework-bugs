@@ -24,7 +24,7 @@ class DiffProcessor:
 		into he framework local repo. 
 		
 		parameters: 
-		  - commit_command : commit argument for git diff command
+		  - commit_command: commit argument for git diff command
 			--> example of command : git diff fe31832^..fe31832
 		
 		returns:
@@ -83,7 +83,7 @@ class DiffProcessor:
 		the output of the command and return the changed lines numbers from the command.
 
 		parameters: 
-		  - commit_command : commit argument for git diff command
+		  - commit_command: commit argument for git diff command
 			--> example of command : git diff fe31832^..fe31832
 
 		returns:
