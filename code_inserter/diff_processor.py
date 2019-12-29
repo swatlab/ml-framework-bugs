@@ -19,7 +19,8 @@ class DiffProcessor:
 		[SUB-FUNCTION] of executePatchfileCommand()
 		Separate the patchfile into patchfiles, one for each file changed.
 		
-		returns: a 1D list of patchfiles (string)
+		returns:
+		  - split_patchfile: a 1D list of patchfiles (string)
 			--> [patchfile_1, patchfile_2, ..., patchfile_n]
 		"""
 		split_patchfile = patchfile.split('diff --git')
@@ -27,15 +28,17 @@ class DiffProcessor:
 
 	def executePatchfileCommand(self, commit_command):
 		"""
-		With DiffExecutor, we are already into the framework local repo. 
-		Retrieves commit patchfile and
-		use splitPatchfile to split the lines of patchfile
+		Execute a git diff command to retrieve the commit patchfile, then use
+		splitPatchfile to split the lines of patchfile. This function doesn't
+		move into the framework repository because DiffExecutor already gets
+		into he framework local repo. 
 		
 		parameters: 
-			commit_command : commit argument for git diff command
+		  - commit_command : commit argument for git diff command
 			--> example of command : git diff fe31832^..fe31832
 		
-		returns: a 1D list of patchfiles (string)
+		returns:
+		  - split_patchfile: a 1D list of patchfiles (string)
 			--> [patchfile_1, patchfile_2, ..., patchfile_n]
 		"""
 		result_patchfile = subprocess.run(['git', 'diff', commit_command], stdout=subprocess.PIPE)
@@ -50,7 +53,8 @@ class DiffProcessor:
 		[SUB-FUNCTION] of findChangedLinesPerFile(). Parses the split_patch
 		to obtain changed lines for each file
 		
-		returns: changed lines for each file 
+		returns:
+		  - line_numbers: changed lines of 1 file 
 			--> [line_number_1, line_number_2, ..., line_number_n]
 		"""
 		regex = r"^@@ [-+](\d+)"
@@ -73,7 +77,7 @@ class DiffProcessor:
 		Scour the split_patchfile to find the changed lines (of one patchfile at time)
 		
 		returns:
-		lines_numbers: changed lines of every file
+		  - lines_numbers: changed lines of every file
 		--> [[file_1_line_number_1, file_1_line_number_2, .. , file_1_line_number_n], 
 			[file_2_line_number_1, file_2_line_number_2, .. , file_2_line_number_p],
 			[file_m_line_number_1, file_m_line_number_2, .. , file_m_line_number_q]]
@@ -84,8 +88,22 @@ class DiffProcessor:
 		return lines_numbers
 
 	def diffLinesNumbers(self, commit_command):
+		"""
+		[MAIN] From the commit command in parameter, execute a git diff command, process
+		the output of the command and return the changed lines numbers from the command.
+
+		parameters: 
+		  - commit_command : commit argument for git diff command
+			--> example of command : git diff fe31832^..fe31832
+
+		returns:
+		  - lines_numbers: changed lines of every file
+		--> [[file_1_line_number_1, file_1_line_number_2, .. , file_1_line_number_n], 
+			[file_2_line_number_1, file_2_line_number_2, .. , file_2_line_number_p],
+			[file_m_line_number_1, file_m_line_number_2, .. , file_m_line_number_q]]
+		"""
 		split_patchfile = self.executePatchfileCommand(commit_command)
+		# remove empty elements caused by string.split()
 		split_patchfile = list(filter(None, split_patchfile))
 		lines_numbers = self.findChangedLinesPerFile(split_patchfile)
-		lines_numbers = list(filter(None, lines_numbers))
 		return lines_numbers
