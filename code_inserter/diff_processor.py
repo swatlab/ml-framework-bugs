@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Mon Jul 22 14:06:21 2019
 
-@author: kevin
-"""
-
-#from python_inserter_copy import printsmt
 import argparse
 import copy
 import os

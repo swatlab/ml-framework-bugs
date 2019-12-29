@@ -1,9 +1,4 @@
-import argparse
-import copy
-import os
-import re
-import subprocess
-import sys
+# -*- coding: utf-8 -*-
 
 class AnalyzerIndentation:
     def getIndentationLevel(self, code_line):

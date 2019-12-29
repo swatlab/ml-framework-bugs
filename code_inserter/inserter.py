@@ -13,12 +13,7 @@ from analyzer_syntax import AnalyzerSyntax
 from diff_executor import DiffExecutor
 from diff_processor import DiffProcessor
 from file_opener import FileOpener
-import argparse
 import copy
-import os
-import re
-import subprocess
-import sys
 
 """
 -------------------- code inserter --------------------

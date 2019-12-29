@@ -1,16 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Mon Jul 22 14:06:21 2019
-
-@author: kevin
-"""
-
-import argparse
-import copy
-import os
-import re
-import subprocess
-import sys
 
 class FileOpener:
 	def getFileContents(self, filepaths):
