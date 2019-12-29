@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import argparse
-import copy
-import os
 import re
 import subprocess
-import sys
 
 class DiffProcessor:
 	def splitPatchfile(self, patchfile):
