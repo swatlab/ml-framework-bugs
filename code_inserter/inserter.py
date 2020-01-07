@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 The main file of the code_inserter. The main function executes
-all of the modules' main functions
+all of the modules' main functions. For the commit given
+in parameter, the inserter adds trace calls at the changed lines
 
 Execute code:
 	python inserter.py commit_number
@@ -89,13 +90,13 @@ class Inserter:
 					'    myfile.write(model_name + " in  line  called \n")'.encode("unicode_escape").decode("utf-8")]
 					# TODO add the filename and line number in the myfile.write on the line above ^
 
-					trace_call_spaced = self.analyzerIndentation.addIndentationLevel(original_line, trace_call)
+					trace_call_indented = self.analyzerIndentation.addIndentationLevel(original_line, trace_call)
 
 					# insert trace call
 					#print(" INDEX ", index, " \n", file_content)
 					trace_index = 0
-					for trace in trace_call_spaced: 
-						traced_files_contents_lines[index].insert(to_be_inserted_line + 1 + trace_index, trace)
+					for trace_line in trace_call_indented: 
+						traced_files_contents_lines[index].insert(to_be_inserted_line + 1 + trace_index, trace_line)
 						trace_index = trace_index + 1
 			index = index + 1
 
