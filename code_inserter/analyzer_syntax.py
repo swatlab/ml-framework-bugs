@@ -3,7 +3,6 @@
 # https://docs.python.org/2/library/trace.html
 # https://docs.python.org/3.0/library/trace.html
 
-from file_opener import FileOpener
 import re
 
 class AnalyzerSyntax:
