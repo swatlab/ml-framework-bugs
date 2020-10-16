@@ -30,7 +30,8 @@ def get_local_pr(input_dir, pull_request_number, use_json):
     else:
         import pickle
         with open(pr_file, file_mode) as p:
-            return pickle.load(p)
+            # Raw API response is second object
+            return pickle.load(p)[1]
 
 @cli.command()
 @click.argument('pull-request-number', type=int)
