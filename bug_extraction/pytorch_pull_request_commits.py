@@ -18,7 +18,7 @@ def cli():
 
 def task(executable_path, issue_number, env, write_root_path, quiet=True):
     with open(Path('{}/{}.txt'.format(write_root_path, issue_number)), 'w') as of:
-        cp = subprocess.run([executable_path, '--strict', '--silent' ,'--no-color', str(issue_number)], env=env, stdout=of, stderr=of)
+        cp = subprocess.run([executable_path, '--strict' ,'--no-color', str(issue_number)], env=env, stdout=of, stderr=of)
         if cp.returncode != 0 and not quiet:
             logging.error('Task {} exited with an error'.format(issue_number))
     return cp.returncode
