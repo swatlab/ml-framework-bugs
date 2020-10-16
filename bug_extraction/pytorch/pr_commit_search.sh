@@ -9,8 +9,9 @@
 # Output is made on STDOUT with optional colors
 # For scripting use, we suggest the argument:
 # --no-color
-# The argument
-# --quiet can be used but no error will be shown
+
+# The argument --quiet could be used but no output will be shown.
+# Only use it to check if a commit is usable
 
 # Note that even with the --quiet option, the return code
 # will reflect if there is an error.
