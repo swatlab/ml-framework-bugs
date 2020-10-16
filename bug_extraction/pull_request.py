@@ -20,6 +20,8 @@ def cli():
     pass
 
 def get_local_pr(input_dir, pull_request_number, use_json):
+    if isinstance(input_dir, str):
+        input_dir = Path(input_dir)
     ext, file_mode = ('json', 'r') if use_json else ('pkl', 'rb')
     pr_file = input_dir / '{}.{}'.format(pull_request_number, ext)
     logging.info('Reading from file {}'.format(pr_file))
