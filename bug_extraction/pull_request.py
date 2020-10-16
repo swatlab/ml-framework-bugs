@@ -82,8 +82,8 @@ def extract_commits(pull_request_number, framework, use_json, local, write):
 @click.argument('pull-request-number', type=int)
 @click.option('--framework', type=click.Choice(['PyTorch'], case_sensitive=False), default='PyTorch')
 @click.option('--write/--no-write', default=True)
-@click.option('--raw-only', is_flag=True)
-def pull_request(pull_request_number, framework, raw_only, write):
+@click.option('--out-pickle', is_flag=True)
+def pull_request(pull_request_number, framework, write, out_pickle):
     logging.info('Want framework {}'.format(framework))
     logging.info('Pull Request number is {}'.format(pull_request_number))
 
@@ -93,36 +93,24 @@ def pull_request(pull_request_number, framework, raw_only, write):
 
     framework_obj = repositories.get_repo(framework)
 
-    if raw_only:
-        import requests
-        logging.info('Using raw request')
-        headers = {'Authorization': 'token {}'.format(os.environ['GITHUB_PAT'])}
-        endpoint = '{}/pulls/{}'.format(framework_obj['api_full_url'], pull_request_number)
+    logging.info('Using PyGithub request')
+    github_link = framework_obj['link']
 
-        logging.debug('Requesting endpoint {}'.format(endpoint))
-        r = requests.get(endpoint, headers=headers)
-        if int(r.status_code) != 200:
-            logging.warning('Request return unexpected status code {}'.format(r.status_code))
-            raise Exception('Wrong status code, expected 200 got {}'.format(r.status_code))
-        response = r.json()
-        if write:
-            import json
-            fp = p_output_dir / '{}.json'.format(pull_request_number)
-            with open(fp, 'w') as p:
-                json.dump(response, p)
-                logging.info('Wrote pull request {} to {}'.format(pull_request_number, fp))
-    else:
-        logging.info('Using PyGithub request')
-        github_link = framework_obj['link']
+    logging.debug('Fetching github repo from {}'.format(github_link))
+    repo = client.get_repo(github_link)
+    pr = repo.get_pull(pull_request_number)
 
-        logging.debug('Fetching github repo from {}'.format(github_link))
-        repo = client.get_repo(github_link)
-        pr = repo.get_pull(pull_request_number)
+    pr_id, pr_merged = pr.id, pr.merged
+    logging.info('Pull Request was merged: {}'.format(pr_merged))
 
-        pr_id, pr_merged = pr.id, pr.merged
-        logging.info('Pull Request was merged: {}'.format(pr_merged))
+    if write:
+        import json
+        fp = p_output_dir / '{}.json'.format(pull_request_number)
+        with open(fp, 'w') as p:
+            json.dump(pr.raw_data, p)
+            logging.info('Wrote pull request {} to {}'.format(pull_request_number, fp))
 
-        if write:
+        if out_pickle:
             fp = p_output_dir / '{}.pkl'.format(pull_request_number)
             with open(fp, 'wb') as p:
                 client.dump(pr, p)
