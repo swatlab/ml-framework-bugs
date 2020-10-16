@@ -62,21 +62,34 @@ def locally(framework, git_dir, pull_request_file, bash_script_file, parallel):
         import functools, itertools
         if parallel:
             import multiprocessing
+            return_codes, tasks = [], []
+
+            def err_handler(*args, **kwargs):
+                logging.error('Got error!')
+                logging.debug('Error handler {}'.format(args))
+                return_codes.append(GitResultStatusCode.FAILED_ON_PYTHON)
+            def done_handler(ret_code, *args):
+                logging.debug('Done handler got statuscode {}'.format(ret_code))
+                return_codes.append(ret_code)
+
             with multiprocessing.Pool(8) as p:
-                args = zip(itertools.repeat(bash_script_file, n), bar, itertools.repeat(sp_env_vars, n))
-                return_codes, tasks = [], []
                 for i in range(n):
-                    r = p.apply_async(task, (bash_script_file, df.issue_number.iloc[i], sp_env_vars, output_root_path), error_callback=logging.error)
+                    r = p.apply_async(task, (bash_script_file, df.issue_number.iloc[i], sp_env_vars, output_root_path), callback=done_handler, error_callback=err_handler)
                     tasks.append(r)
-                for t, elem in zip(tasks, bar):
+                for t, _ in zip(tasks, bar):
                     # Append result from task which is status code or None if failed somwhere in between (in Python)
                     # in that case, return own enum value
-                    return_codes.append(t.wait() or GitResultStatusCode.FAILED_ON_PYTHON)
+                    res = t.wait()
+                    logging.debug('In zip with wait val {}'.format(res))
+
+            assert len(return_codes) == n == len(tasks)
+            logging.debug(return_codes)
+            logging.debug(tasks)
 
             if sum(return_codes) == 0:
-                logging.info('All tasks return code 0. Completed {} out of {} tasks!'.format(len(return_codes, n)))
+                logging.info('All tasks return code 0. Completed {} out of {} tasks!'.format(len(return_codes), n))
             else:
-                n_failed = sum(1 for ret in return_code if ret != 0)
+                n_failed = sum(1 for ret in return_codes if ret != 0)
                 n_success = len(return_codes) - n_failed
                 logging.warning('There are {} failed tasks (return code not 0). Check output'.format(n_failed))
                 logging.info('Completed {} out of {} tasks.'.format(n_success, n))
