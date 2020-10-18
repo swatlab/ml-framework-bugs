@@ -2,9 +2,12 @@ import os
 import io
 import re
 import logging
+from collections import namedtuple, ChainMap
 from github import Github, Repository, GitRelease
 from pathlib import Path
-
+from study_enums import StudyPhase1Field, StudyPhase2Field
+import typing
+import dataclasses
 
 o = Path('out')
 o.mkdir(exist_ok=True)
@@ -22,9 +25,10 @@ def get_all_releases(repo: Repository):
     # TODO: Maybe add support for various versions
     return repo.get_releases()
 
+ScrapingInformation = namedtuple('ScrapingInformation', ['phase1', 'phase2', 'other'])
 
 
-def get_bug_fixes_via_md_parse(release: GitRelease):
+def get_bug_fixes_via_md_parse(release: GitRelease) -> typing.List[ScrapingInformation]:
     def extract_information_from_line(line):
         regex = r"^\s*\*\s?(?P<description>.*?)\s?(?:\((?P<link_text>\[.*?#?(?P<issue_number>\d+).*?\])\s?\((?P<link>[^ ]*?)\),?.*|\(#(?P<issue_number_alone>\d+)\)|)[* ]?$"
         # matches = re.finditer(regex, test_str, re.MULTILINE)
@@ -77,8 +81,11 @@ def get_bug_fixes_via_md_parse(release: GitRelease):
                 if info:
                     issue_number = info['issue_number'] or info['issue_number_alone']
                     logging.info('Extracted values {}'.format(info))
-                    bug_fixes.append({'issue_number': issue_number, 'link': info['link'], 'context': bug_fix_ctx, 'raw': line})
 
+                    fields_1 = StudyPhase1Field(issue_number=issue_number)
+                    # TODO: Transformation for release_note_description
+                    fields_2 = StudyPhase2Field(link=info['link'], release_note_description=line)
+                    bug_fixes.append(ScrapingInformation(fields_1, fields_2, {'issue_number': issue_number, 'link': info['link'], 'context': bug_fix_ctx, 'raw': line}))
         else:
             m = bug_fix_section_re.match(line)
             if m:
@@ -88,7 +95,7 @@ def get_bug_fixes_via_md_parse(release: GitRelease):
                 logging.debug('Level {}'.format(bug_fix_indentation_level))
     return bug_fixes
 
-def get_bug_fixes(release: GitRelease, method='markdown'):
+def get_bug_fixes(release: GitRelease, method='markdown') -> typing.List[ScrapingInformation]:
     # TODO: Could be a class
     if method != 'markdown' and method != 'html':
         raise ValueError
@@ -105,6 +112,7 @@ def get_bug_fixes(release: GitRelease, method='markdown'):
 def get_bug_fixes_via_html_parse(release: GitRelease):
     from bs4 import BeautifulSoup
     import markdown
+    logging.warning('Scraping via HTML will not populate ScrapingInformation correctly.')
     # TODO: Maybe manually extract things with regex instead of transforming twice
     gen_html = markdown.markdown(release.body, output_format='html5')
     # logging.debug(gen_html)
@@ -142,7 +150,8 @@ def get_bug_fixes_via_html_parse(release: GitRelease):
                     link = a.attrs['href']
                     pr_number = a.attrs['href'].rsplit('/',1)[-1]
                 logging.info(a)
-                bug_fixes.append({'issue_number': pr_number, 'link': link, 'context': bugfix_context, 'raw': str(a)})
+                # TODO
+                bug_fixes.append(ScrapingInformation(None, None, {'issue_number': pr_number, 'link': link, 'context': bugfix_context, 'raw': str(a)}))
     return bug_fixes
 
 
@@ -162,16 +171,26 @@ def main(client):
         logging.info('Got {} ({})'.format(release.tag_name, release.html_url))
         # bug_fixes = get_bug_fixes_via_html_parse(release)
         bug_fixes = get_bug_fixes(release, method='markdown')
+
         logging.info('Release {} gathered information on {} bugs'.format(release.tag_name, len(bug_fixes)))
+        if len(bug_fixes) == 0:
+            logging.warn('No bugs found for release {}. Skipping...'.format(release.tag_name))
+            continue
+        
+        flattened = []
+        # Populate fields with correct information
+        for bug in bug_fixes:
+            bug.phase1.framework = repo_name
+            bug.phase2.release = release.tag_name
+            flattened.append(dict(ChainMap(dataclasses.asdict(bug.phase1), dataclasses.asdict(bug.phase2), bug.other)))
         with open(processed_dir / f'{repo_name}_{release.tag_name}.json', 'w') as of:
             import json
-            json.dump(bug_fixes, of)
+            json.dump(flattened, of)
+        
         with open(processed_dir / f'{repo_name}_{release.tag_name}.csv', 'w', newline='') as csvfile:
-            import csv
-            field_names = ['issue_number', 'link', 'context', 'raw']
-            writer = csv.DictWriter(csvfile, fieldnames=field_names)
-            writer.writeheader()
-            writer.writerows(bug_fixes)
+            import pandas as pd
+            df = pd.DataFrame.from_dict(flattened)
+            df.to_csv(csvfile, index=False)
 
 if __name__ == "__main__":
     main(get_client())
