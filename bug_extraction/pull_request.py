@@ -4,7 +4,8 @@ import logging
 import github
 import requests
 from pathlib import Path
-
+import json
+import pickle
 from github import Github, Repository, GitRelease
 import repositories
 
@@ -24,13 +25,11 @@ def get_local_pr(input_dir, pull_request_number, use_json):
         input_dir = Path(input_dir)
     ext, file_mode = ('json', 'r') if use_json else ('pkl', 'rb')
     pr_file = input_dir / '{}.{}'.format(pull_request_number, ext)
-    logging.info('Reading from file {}'.format(pr_file))
+    logging.debug('Reading from file {}'.format(pr_file))
     if use_json:
-        import json
         with open(pr_file, file_mode) as p:
             return json.load(p)
     else:
-        import pickle
         with open(pr_file, file_mode) as p:
             # Raw API response is second object
             return pickle.load(p)[1]
@@ -90,32 +89,96 @@ def pull_request(pull_request_number, framework, write, out_pickle):
     root_path = Path('out').joinpath(framework.lower())
     p_output_dir = root_path / 'pull_requests'
     p_output_dir.mkdir(exist_ok=True)
+    pr = fetch_and_save_pr(framework, pull_request_number, output_dir=p_output_dir, write=write, out_pickle=out_pickle)
+    pr_id, pr_merged = pr.id, pr.merged
+    logging.info('Pull Request was merged: {}'.format(pr_merged))
 
+
+def fetch_and_save_pr(framework, pull_request_number, output_dir, write=True, out_pickle=True):
     framework_obj = repositories.get_repo(framework)
-
-    logging.info('Using PyGithub request')
+    p_output_dir = Path(output_dir)
     github_link = framework_obj['link']
 
     logging.debug('Fetching github repo from {}'.format(github_link))
     repo = client.get_repo(github_link)
     pr = repo.get_pull(pull_request_number)
 
-    pr_id, pr_merged = pr.id, pr.merged
-    logging.info('Pull Request was merged: {}'.format(pr_merged))
-
     if write:
-        import json
         fp = p_output_dir / '{}.json'.format(pull_request_number)
         with open(fp, 'w') as p:
             json.dump(pr.raw_data, p)
-            logging.info('Wrote pull request {} to {}'.format(pull_request_number, fp))
+            logging.debug('Wrote pull request {} to {}'.format(pull_request_number, fp))
 
         if out_pickle:
             fp = p_output_dir / '{}.pkl'.format(pull_request_number)
             with open(fp, 'wb') as p:
                 client.dump(pr, p)
-                logging.info('Wrote pull request {} to {}'.format(pull_request_number, fp))
+                logging.debug('Wrote pull request {} to {}'.format(pull_request_number, fp))
+    else:
+        logging.debug('Not saving pull {} request to local cache'.format(pull_request_number))
 
+    return pr
+
+def get_or_fetch_pr(framework, pull_request_number, cache_dir, write=True, force_fetch=False, **kwargs):
+    framework_obj = repositories.get_repo(framework)
+    def fetch():
+        pr = fetch_and_save_pr(framework, pull_request_number, output_dir=cache_dir, write=True, out_pickle=True)
+        return pr.raw_data
+    try:
+        if force_fetch:
+            logging.info('Force fetching pull request')
+            return fetch()
+        logging.debug('Trying local pr')
+        pr = get_local_pr(pull_request_number=pull_request_number, input_dir=cache_dir, **kwargs)
+        return pr
+    except FileNotFoundError as err:
+        logging.debug('Pull request file not found, using fetch method')
+        return fetch()
+    except json.decoder.JSONDecodeError as err:
+        logging.debug('Pull request file had JSON error, using fetch method', extra=err)
+        return fetch()
+
+
+@cli.command()
+@click.option('--framework', type=click.Choice(['PyTorch'], case_sensitive=False), default='PyTorch')
+@click.option('--pull-request-file', '-f', type=click.Path(exists=True, dir_okay=False))
+@click.option('--write/--no-write', default=True)
+@click.option('--force-fetch', is_flag=True)
+def fetch_pull_request_names(framework, pull_request_file, write, force_fetch):
+    import pandas as pd
+    df = pd.read_csv(pull_request_file)
+    df_pr = df.set_index('issue_number')
+    
+    root_path = Path('out').joinpath(framework.lower())
+    p_output_dir = root_path / 'processed_v2'
+    p_pull_requests_dir = root_path / 'pull_requests'
+
+    def show_prog_item(t):
+        return f"Pull Request {t[0] if t else 'unknown'}"
+
+    with click.progressbar(df_pr.iterrows(), label="Finding Pull Requests",
+                            item_show_func=show_prog_item,
+                            length=df_pr.shape[0],
+                            show_percent=True,
+                            show_eta=False,
+                            show_pos=True) as bar:
+        for issue_number, row in bar:
+            logging.debug('Treating issue {}'.format(issue_number))
+            try:
+                pr = get_or_fetch_pr(framework, issue_number, cache_dir=p_pull_requests_dir, use_json=True, write=True, force_fetch=force_fetch)
+                df_pr.loc[issue_number, 'pr_name'] = pr['title']
+            except github.GithubException as gh_err:
+                logging.warning('Could not get data from github for Pull Request {}'.format(issue_number))
+                continue
+    print(df_pr[:10])
+    print(df_pr[:10]['pr_name'])
+    if write:
+        p_out_file = p_output_dir / 'concat_updated.csv'
+        logging.info('Writing to {}'.format(p_out_file))
+        # Reindex to put the order of the columns ok
+        df_pr.reset_index()[df.columns].to_csv(p_out_file, index=False)
+    logging.info('Fetched information for all pull requests ({})'.format(len(df_pr)))
+            
 if __name__ == "__main__":
     client = get_client()
     cli()
