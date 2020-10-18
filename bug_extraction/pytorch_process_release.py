@@ -3,12 +3,11 @@ import logging
 import pandas as pd
 import click
 from pathlib import Path, PurePath
-
+import dataclasses
 logging.basicConfig(level=logging.INFO)
 
-# TODO: Move to own file
-phase_1_columns = ['framework', 'bug_name', 'issue_number', 'buggy_commit', 'corrected_commit']
-phase_2_columns = ['link', 'release', 'description', 'comment']
+from study_enums import StudyPhase1Field, StudyPhase2Field
+
 @click.group()
 def cli():
     pass
@@ -27,6 +26,9 @@ def local(framework: str, write: bool, keep_empty: bool, concatenate: bool):
     p_output_dir.mkdir(exist_ok=True)
 
     concat_df = []
+
+    phase_1_columns = [f.name for f in dataclasses.fields(StudyPhase1Field)]
+    phase_2_columns = [f.name for f in dataclasses.fields(StudyPhase2Field)]
 
     for f in p_input_dir.glob('*.csv'):
         logging.info(f)
