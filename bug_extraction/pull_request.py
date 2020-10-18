@@ -21,6 +21,7 @@ def cli():
     pass
 
 def get_local_pr(input_dir, pull_request_number, use_json):
+    """Get a pull request information JSON file using local directory."""
     if isinstance(input_dir, str):
         input_dir = Path(input_dir)
     ext, file_mode = ('json', 'r') if use_json else ('pkl', 'rb')
@@ -41,6 +42,13 @@ def get_local_pr(input_dir, pull_request_number, use_json):
 @click.option('--local/--fetch', default=True)
 @click.option('--write/--no-write', default=True)
 def extract_commits(pull_request_number, framework, use_json, local, write):
+    """Fetches patch and diffs for the supplied pull request.
+    
+    Reads the local directory for the framework in order to do so.
+
+    Note that the patch and diff are based on the branching commit, which
+    might be different than the commit from where it is integrated.
+    """
     root_path = Path('out').joinpath(framework.lower())
     p_input_dir = root_path / 'pull_requests'
 
@@ -83,6 +91,7 @@ def extract_commits(pull_request_number, framework, use_json, local, write):
 @click.option('--write/--no-write', default=True)
 @click.option('--out-pickle', is_flag=True)
 def pull_request(pull_request_number, framework, write, out_pickle):
+    """Downloads a single Pull Request identified by its number."""
     logging.info('Want framework {}'.format(framework))
     logging.info('Pull Request number is {}'.format(pull_request_number))
 
@@ -145,6 +154,12 @@ def get_or_fetch_pr(framework, pull_request_number, cache_dir, write=True, force
 @click.option('--write/--no-write', default=True)
 @click.option('--force-fetch', is_flag=True)
 def fetch_pull_request_names(framework, pull_request_file, write, force_fetch):
+    """Outputs a CSV with the title of the Pull Request information inserted.
+    
+    Needs an input file, usually concat.csv, to iterate through the
+    rows.
+    Will fetch or read cache depending on the parameters.
+    """
     import pandas as pd
     df = pd.read_csv(pull_request_file)
     df_pr = df.set_index('issue_number')
