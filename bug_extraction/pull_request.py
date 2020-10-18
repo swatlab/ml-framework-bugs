@@ -185,8 +185,7 @@ def fetch_pull_request_names(framework, pull_request_file, write, force_fetch):
             except github.GithubException as gh_err:
                 logging.warning('Could not get data from github for Pull Request {}'.format(issue_number))
                 continue
-    print(df_pr[:10])
-    print(df_pr[:10]['pr_name'])
+
     if write:
         p_out_file = p_output_dir / 'concat_updated.csv'
         logging.info('Writing to {}'.format(p_out_file))
