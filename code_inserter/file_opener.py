@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
-
+import os, subprocess
 class FileOpener:
-	def getFileContents(self, filepaths):
+	def __init__(self, git_dir):
+		self.git_dir = git_dir
+
+	def getFileContents(self, filepaths, git_revision):
 		"""
 		Opens all the changed files and obtain their text
 		
@@ -13,12 +16,21 @@ class FileOpener:
 		  - files_contents: a 1D list of strings, obtained after reading entirely each file
 			--> [file_1_content, file_2_content, .. , file_n_content]
 		"""
+		env_copy = os.environ.copy()
+		env_copy['GIT_DIR'] = self.git_dir
+
 		files_contents = []
 		for filepath in filepaths:
-			file = open(filepath,"r") 
-			file_content = file.read()
-			files_contents.append(file_content)
-			file.close()
+			if self.git_dir:
+				cmd = ['git', 'show', '{}:{}'.format(git_revision, filepath)]
+				file_at_revision_cmd = subprocess.run(cmd, stdout=subprocess.PIPE, env=env_copy, check=True)
+				content = file_at_revision_cmd.stdout.decode('utf-8')
+				files_contents.append(content)
+			else:
+				file = open(filepath,"r") 
+				file_content = file.read()
+				files_contents.append(file_content)
+				file.close()
 		return files_contents
 
 	def splitFileContents(self, files_contents):
@@ -37,7 +49,7 @@ class FileOpener:
 			files_contents_lines.append(file_content.splitlines())
 		return files_contents_lines
 
-	def openFiles(self, filepaths):
+	def openFiles(self, filepaths, git_revision):
 		"""
 		[MAIN] Open the	changed files' content and put in files_contents_lines.
 		getFileContents() gets each file's text in one string, then
@@ -54,7 +66,7 @@ class FileOpener:
 				[file_2_line_1, file_2_line_2, .. , file_2_line_n],
 				[file_m_line_1, file_m_line_2, .. , file_m_line_n]]
 		"""
-		files_contents = self.getFileContents(filepaths)
+		files_contents = self.getFileContents(filepaths, git_revision=git_revision)
 		files_contents_lines = self.splitFileContents(files_contents)
 		return files_contents_lines
 

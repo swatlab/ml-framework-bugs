@@ -2,8 +2,12 @@
 
 import re
 import subprocess
+import os
 
 class DiffProcessor:
+	def __init__(self, git_dir):
+		self.git_dir = git_dir
+
 	def splitPatchfile(self, patchfile):
 		"""
 		[SUB-FUNCTION] of executePatchfileCommand()
@@ -31,7 +35,9 @@ class DiffProcessor:
 		  - split_patchfile: a 1D list of patchfiles (string)
 			--> [patchfile_1, patchfile_2, ..., patchfile_n]
 		"""
-		result_patchfile = subprocess.run(['git', 'diff', commit_command], stdout=subprocess.PIPE)
+		env_copy = os.environ.copy()
+		env_copy['GIT_DIR'] = self.git_dir
+		result_patchfile = subprocess.run(['git', 'diff', commit_command], stdout=subprocess.PIPE, env=env_copy)
 		patchfile = result_patchfile.stdout.decode("utf-8")
 		
 		split_patchfile = self.splitPatchfile(patchfile)

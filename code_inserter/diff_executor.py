@@ -1,13 +1,18 @@
 # -*- coding: utf-8 -*-
 
-import argparse
 import os
 import subprocess
+from pathlib import Path
+
 
 # PARAM: COMMIT ---> from console
 FRAMEWORK_PATH = "scikit-learn"
 
 class DiffExecutor:
+	def __init__(self, commits, git_dir):
+		self.commits = commits
+		self.git_dir = git_dir
+
 	def getAndFormatCommitNumber(self):
 		"""
 		Parse commit number from the command line and format it
@@ -17,12 +22,7 @@ class DiffExecutor:
 			commit_command: commit number in the format "commit_number^..commit_number"
 			--> example of command : git diff fe31832^..fe31832
 		"""
-		
-		parser = argparse.ArgumentParser(description='Commits')
-		parser.add_argument('commits', metavar='C', type=str, nargs='+')
-		args = parser.parse_args()
-
-		commit_number = args.commits[0]
+		commit_number = self.commits[0]
 		commit_command = commit_number+'^..'+commit_number
 		return commit_number, commit_command
 		
@@ -39,10 +39,10 @@ class DiffExecutor:
 					   Filenames are separated by newlines
 		"""
 
-		os.chdir("../..")
+		env_copy = os.environ.copy()
+		env_copy['GIT_DIR'] = self.git_dir
 		# TODO adapt path towards desired framework Github repo
-		os.chdir(FRAMEWORK_PATH)
-		result_filenames = subprocess.run(['git', 'diff', "--name-only", commit_command], stdout=subprocess.PIPE)
+		result_filenames = subprocess.run(['git', 'diff', "--name-only", commit_command], stdout=subprocess.PIPE, env=env_copy)
 		filenames = result_filenames.stdout.decode("utf-8")
 		return filenames
 
