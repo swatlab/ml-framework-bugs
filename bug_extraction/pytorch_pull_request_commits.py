@@ -17,6 +17,7 @@ def cli():
     pass
 
 def task(executable_path, issue_number, env, write_root_path, quiet=True):
+    """Execute a search commit script given an issue number and writes script results."""
     with open(Path('{}/{}.txt'.format(write_root_path, issue_number)), 'w') as of:
         cp = subprocess.run([executable_path, '--strict' ,'--no-color', str(issue_number)], env=env, stdout=of, stderr=of)
         if cp.returncode != 0 and not quiet:
@@ -34,6 +35,11 @@ class GitResultStatusCode(enum.IntEnum):
 @click.option('--bash-script-file', type=click.Path(dir_okay=False, resolve_path=True), default=None)
 @click.option('--parallel', is_flag=True)
 def locally(framework, git_dir, pull_request_file, bash_script_file, parallel):
+    """Extract commit and branching information for Pull Requests in cloned repository.
+    
+    Reads a local csv (`pull-request-file`) containing all the pull requests and reads
+    the `issue_number` value to launch a search script in the `git-dir`.
+    """
     import time
     df = pd.read_csv(pull_request_file)
     n = len(df.issue_number)
