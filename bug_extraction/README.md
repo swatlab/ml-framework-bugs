@@ -22,7 +22,7 @@ _This process will leave empty values in the dataframes, for the bug fixes that 
 - Create a new dataframe with the bugs that have a Pull Request number on them that was parsed.
 - Create a concatenated dataframe will all the bugs in it
 ```bash
-python pytorch_process_release.py --framework pytorch [--concatenate]
+python pytorch_process_release.py local --framework pytorch [--concatenate]
 ```
 With the concatenate option, this will create the file `out/pytorch/processed_v2/concat.csv`
 ### Notes
