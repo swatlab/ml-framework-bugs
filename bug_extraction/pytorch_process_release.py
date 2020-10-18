@@ -18,8 +18,12 @@ def cli():
 @click.option('--write/--no-write', default=True)
 @click.option('--keep-empty', is_flag=True, help='Keep rows that have no issue number in final dataframe(s)')
 @click.option('--concatenate', is_flag=True, help='Create a single dataframe containing all information')
-def local(framework: str, write: bool, keep_empty: bool, concatenate: bool):
-    """Formats per-release CSV files to have consistent CSV files column ordering and complete the first research step."""
+def format_extracted_bugs(framework: str, write: bool, keep_empty: bool, concatenate: bool):
+    """Formats per-release CSV files to have consistent CSV files column ordering and complete the first research step.
+
+    Looks in the folder `processed` inside framework's root folder for per-release CSV files.
+    Writes into a sibling folder `processed_v2`, optionally in a single file.
+    """
     root_path = Path('out').joinpath(framework.lower())
     logging.debug(f'Scanning folder {root_path}')
 
