@@ -41,7 +41,7 @@ def get_local_pr(input_dir, pull_request_number, use_json):
 @click.option('--use-json/--use-pickle', default=True)
 @click.option('--local/--fetch', default=True)
 @click.option('--write/--no-write', default=True)
-def extract_commits(pull_request_number, framework, use_json, local, write):
+def fetch_diffs(pull_request_number, framework, use_json, local, write):
     """Fetches patch and diffs for the supplied pull request.
     
     Reads the local directory for the framework in order to do so.
@@ -90,7 +90,7 @@ def extract_commits(pull_request_number, framework, use_json, local, write):
 @click.option('--framework', type=click.Choice(['PyTorch'], case_sensitive=False), default='PyTorch')
 @click.option('--write/--no-write', default=True)
 @click.option('--out-pickle', is_flag=True)
-def pull_request(pull_request_number, framework, write, out_pickle):
+def fetch_single(pull_request_number, framework, write, out_pickle):
     """Downloads a single Pull Request identified by its number."""
     logging.info('Want framework {}'.format(framework))
     logging.info('Pull Request number is {}'.format(pull_request_number))
