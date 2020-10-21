@@ -6,6 +6,8 @@ import requests
 from pathlib import Path
 import json
 import pickle
+import pandas as pd
+import data_utils
 from github import Github, Repository, GitRelease
 import repositories
 
@@ -160,8 +162,7 @@ def fetch_pull_request_names(framework, pull_request_file, write, force_fetch):
     rows.
     Will fetch or read cache depending on the parameters.
     """
-    import pandas as pd
-    df = pd.read_csv(pull_request_file, dtype={'pr_number':pd.Int32Dtype()})
+    df = data_utils.get_csv(pull_request_file)
     root_path = Path('out').joinpath(framework.lower())
     p_output_dir = root_path / 'processed_v2'
     p_pull_requests_dir = root_path / 'pull_requests'

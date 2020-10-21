@@ -9,6 +9,7 @@ import pandas as pd
 import click
 from pathlib import Path, PurePath
 import subprocess
+import data_utils
 
 logger = logging.getLogger()
 logger.setLevel(logging.WARNING)
@@ -94,7 +95,7 @@ def pr_merged_points(framework, git_dir, pull_request_file, strict):
     # TODO: Make util
     import pull_request
     git_path = Path(git_dir)
-    df = pd.read_csv(pull_request_file)
+    df = data_utils.get_csv(pull_request_file)
     logger.debug(df.columns)
 
     root_path = Path('out').joinpath(framework.lower())
@@ -148,7 +149,8 @@ def locally(framework, git_dir, pull_request_file, bash_script_file, parallel):
     the `pr_number` value to launch a search script in the `git-dir`.
     """
     import time
-    df = pd.read_csv(pull_request_file)
+    import data_utils
+    df = data_utils.get_csv(pull_request_file)
     n = len(df.pr_number)
     def show_prog_item(item):
         return f"Pull Request #{item}"
