@@ -161,9 +161,7 @@ def fetch_pull_request_names(framework, pull_request_file, write, force_fetch):
     Will fetch or read cache depending on the parameters.
     """
     import pandas as pd
-    df = pd.read_csv(pull_request_file)
-    df_pr = df.set_index('issue_number')
-    
+    df = pd.read_csv(pull_request_file, dtype={'pr_number':pd.Int32Dtype()})
     root_path = Path('out').joinpath(framework.lower())
     p_output_dir = root_path / 'processed_v2'
     p_pull_requests_dir = root_path / 'pull_requests'
@@ -171,27 +169,32 @@ def fetch_pull_request_names(framework, pull_request_file, write, force_fetch):
     def show_prog_item(t):
         return f"Pull Request {t[0] if t else 'unknown'}"
 
-    with click.progressbar(df_pr.iterrows(), label="Finding Pull Requests",
+    with click.progressbar(df.iterrows(), label="Finding Pull Requests",
                             item_show_func=show_prog_item,
-                            length=df_pr.shape[0],
+                            length=df.shape[0],
                             show_percent=True,
                             show_eta=False,
                             show_pos=True) as bar:
-        for issue_number, row in bar:
-            logging.debug('Treating issue {}'.format(issue_number))
+        for i, row in bar:
+            pr_number = row['pr_number']
+            if pd.isna(pr_number):
+                logging.debug('PR number is None, not treating it')
+                continue
+            pr_number = int(pr_number)
+            logging.debug('Treating PR {}'.format(pr_number))
             try:
-                pr = get_or_fetch_pr(framework, issue_number, cache_dir=p_pull_requests_dir, use_json=True, write=True, force_fetch=force_fetch)
-                df_pr.loc[issue_number, 'pr_name'] = pr['title']
+                pr = get_or_fetch_pr(framework, pr_number, cache_dir=p_pull_requests_dir, use_json=True, write=True, force_fetch=force_fetch)
+                df.loc[i, 'pr_name'] = pr['title']
             except github.GithubException as gh_err:
-                logging.warning('Could not get data from github for Pull Request {}'.format(issue_number))
+                logging.warning('Could not get data from github for Pull Request {}'.format(pr_number))
                 continue
 
     if write:
         p_out_file = p_output_dir / 'concat_updated.csv'
         logging.info('Writing to {}'.format(p_out_file))
         # Reindex to put the order of the columns ok
-        df_pr.reset_index()[df.columns].to_csv(p_out_file, index=False)
-    logging.info('Fetched information for all pull requests ({})'.format(len(df_pr)))
+        df.to_csv(p_out_file, index=False)
+    logging.info('Fetched information for all pull requests ({})'.format(len(df)))
             
 if __name__ == "__main__":
     client = get_client()

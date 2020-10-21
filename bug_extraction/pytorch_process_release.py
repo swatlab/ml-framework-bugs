@@ -38,17 +38,23 @@ def format_extracted_bugs(framework: str, write: bool, keep_empty: bool, concate
     for f in p_input_dir.glob('*.csv'):
         logging.info(f)
         release_tag = f.stem.lstrip('{}_'.format(framework.lower()))
-        df = pd.read_csv(f, dtype={'issue_number':pd.Int32Dtype()})
+        df = pd.read_csv(f, dtype={'number_with_hashtag':pd.Int32Dtype(), 'link': str})
         df['framework'] = framework
         df['release']  = release_tag
-        df = df.reindex(columns=phase_1_columns+phase_2_columns)
 
-        empty_issue_ix = df.issue_number.isna()
+        # Don't keep those that don't have a number_with_hashtag field
+        empty_issue_ix = df.number_with_hashtag.isna()
         if keep_empty:
             logging.info('Keeping empty issue rows ({})'.format(sum(empty_issue_ix)))
         else:
             logging.info('Dropping empty issue rows ({})'.format(sum(empty_issue_ix)))
             df = df[~empty_issue_ix]
+
+        # Only use StudyPhaseXFields
+        df = df.reindex(columns=phase_1_columns+phase_2_columns)
+
+        pr_numbers_well_formed = df.link.str.extract('/pull/(?P<pr_number>\d+)')
+        df['pr_number'] = pr_numbers_well_formed['pr_number']
 
         logging.debug('Columns are now')
         logging.debug(df.columns)

@@ -30,7 +30,7 @@ ScrapingInformation = namedtuple('ScrapingInformation', ['phase1', 'phase2', 'ot
 
 def get_bug_fixes_via_md_parse(release: GitRelease) -> typing.List[ScrapingInformation]:
     def extract_information_from_line(line):
-        regex = r"^\s*\*\s?(?P<description>.*?)\s?(?:\((?P<link_text>\[.*?#?(?P<issue_number>\d+).*?\])\s?\((?P<link>[^ ]*?)\),?.*|\(#(?P<issue_number_alone>\d+)\)|)[* ]?$"
+        regex = r"^\s*\*\s?(?P<description>.*?)\s?(?:\((?P<link_text>\[.*?#?(?P<hashtag_number>\d+).*?\])\s?\((?P<link>[^ ]*?)\),?.*|\(#(?P<hashtag_number_alone>\d+)\)|)[* ]?$"
         # matches = re.finditer(regex, test_str, re.MULTILINE)
         match = re.match(regex, line, re.MULTILINE)
         # for matchNum, match in enumerate(matches, start=1):
@@ -79,13 +79,13 @@ def get_bug_fixes_via_md_parse(release: GitRelease) -> typing.List[ScrapingInfor
             else:
                 info = extract_information_from_line(line.rstrip())
                 if info:
-                    issue_number = info['issue_number'] or info['issue_number_alone']
+                    number_with_hashtag = info['hashtag_number'] or info['hashtag_number_alone']
                     logging.info('Extracted values {}'.format(info))
 
-                    fields_1 = StudyPhase1Field(issue_number=issue_number)
+                    fields_1 = StudyPhase1Field()
                     # TODO: Transformation for release_note_description
                     fields_2 = StudyPhase2Field(link=info['link'], release_note_description=line)
-                    bug_fixes.append(ScrapingInformation(fields_1, fields_2, {'issue_number': issue_number, 'link': info['link'], 'context': bug_fix_ctx, 'raw': line}))
+                    bug_fixes.append(ScrapingInformation(fields_1, fields_2, {'number_with_hashtag': number_with_hashtag, 'link': info['link'], 'context': bug_fix_ctx, 'raw': line}))
         else:
             m = bug_fix_section_re.match(line)
             if m:

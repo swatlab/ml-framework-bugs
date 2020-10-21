@@ -18,15 +18,15 @@ def cli():
     pass
 
 # TODO: Move to class, ex: PyTorchCommitMatcher
-def commit_belongs_to_issue(commit_info, issue_number, other_data=None, pr_data=None):
+def commit_belongs_to_pr(commit_info, pr_number, other_data=None, pr_data=None):
     import git
     if isinstance(commit_info, git.objects.Commit):
         # TODO: Use metadata and other factors to match
-        return  f'#{issue_number}' in commit_info.message or f'pull/{issue_number}' in commit_info.message
+        return  f'#{pr_number}' in commit_info.message or f'pull/{pr_number}' in commit_info.message
     else:
         raise NotImplementedError('Need a Python wrapped git object')
 
-def get_commit_for_pr(git_dir, issue_number, other_data=None, pr_data=None):
+def get_commit_for_pr(git_dir, pr_number, other_data=None, pr_data=None):
     import git
     from git import Repo
     import functools
@@ -54,7 +54,7 @@ def get_commit_for_pr(git_dir, issue_number, other_data=None, pr_data=None):
     range_to_search = '{start}..{end}'.format(start=start_revision or '', end=fixed_in_release or '') if start_revision or fixed_in_release else 'origin/master'
     logger.debug('Searching range {}'.format(range_to_search))
 
-    commit_matches = list(filter(functools.partial(commit_belongs_to_issue, issue_number=issue_number, other_data=other_data, pr_data=pr_data),
+    commit_matches = list(filter(functools.partial(commit_belongs_to_pr, pr_number=pr_number, other_data=other_data, pr_data=pr_data),
                     repo.iter_commits(range_to_search, **rev_list_kwargs)))
 
     logger.info('Search result is {}'.format(commit_matches))
@@ -71,12 +71,12 @@ def get_commit_for_pr(git_dir, issue_number, other_data=None, pr_data=None):
         return None
 
 
-def task(executable_path, issue_number, env, write_root_path, quiet=True):
-    """Execute a search commit script given an issue number and writes script results."""
-    with open(Path('{}/{}.txt'.format(write_root_path, issue_number)), 'w') as of:
-        cp = subprocess.run([executable_path, '--strict' ,'--no-color', str(issue_number)], env=env, stdout=of, stderr=of)
+def task(executable_path, pr_number, env, write_root_path, quiet=True):
+    """Execute a search commit script given an pr number and writes script results."""
+    with open(Path('{}/{}.txt'.format(write_root_path, pr_number)), 'w') as of:
+        cp = subprocess.run([executable_path, '--strict' ,'--no-color', str(pr_number)], env=env, stdout=of, stderr=of)
         if cp.returncode != 0 and not quiet:
-            logging.error('Task {} exited with an error'.format(issue_number))
+            logging.error('Task {} exited with an error'.format(pr_number))
     return cp.returncode
 
 import enum
@@ -90,7 +90,7 @@ class GitResultStatusCode(enum.IntEnum):
 @click.option('--pull-request-file', '-f', type=click.Path(exists=True, dir_okay=False))
 @click.option('--strict', is_flag=True)
 def pr_merged_points(framework, git_dir, pull_request_file, strict):
-    """Get the before and after commit for pull request issue that was merged."""
+    """Get the before and after commit for pull request pr that was merged."""
     # TODO: Make util
     import pull_request
     git_path = Path(git_dir)
@@ -106,16 +106,19 @@ def pr_merged_points(framework, git_dir, pull_request_file, strict):
                             show_eta=True, show_pos=True,
                             bar_template="%(label)s [%(bar)s] %(info)s") as bar:
         for i, row in bar:
-            issue_number = row.issue_number
+            pr_number = row.pr_number
+            if pd.isna(pr_number):
+                logger.debug('Iteration {} has no pr_number. Skipping...')
+                continue
             logger.debug('Iteration {}'.format(type(i)))
-            logger.info('Getting issue for {}'.format(issue_number))
+            logger.info('Getting pr for {}'.format(pr_number))
             try:
-                pr_data = pull_request.get_local_pr(p_input_dir, issue_number, use_json=True)
+                pr_data = pull_request.get_local_pr(p_input_dir, pr_number, use_json=True)
             except:
                 logger.debug('Failed to get local data for pull request')
                 pr_data = None
             try:
-                commit_info = get_commit_for_pr(git_path, issue_number, other_data=row, pr_data=pr_data)
+                commit_info = get_commit_for_pr(git_path, pr_number, other_data=row, pr_data=pr_data)
             except Exception as err:
                 logger.error('Failed to get commit for unhandled exception.')
                 commit_info = None
@@ -123,12 +126,12 @@ def pr_merged_points(framework, git_dir, pull_request_file, strict):
             if strict:
                 assert commit_info is not None
             if commit_info is not None:
-                logger.info('Commit for PR {} is {}'.format(issue_number, commit_info))
+                logger.info('Commit for PR {} is {}'.format(pr_number, commit_info))
                 corrected, buggy = commit_info.hexsha, commit_info.parents[0].hexsha
                 df.loc[i, 'buggy_commit'] = buggy
                 df.loc[i, 'corrected_commit'] = corrected
-                logger.info('Corrected for PR {} is {}'.format(issue_number, corrected))
-                logger.info('Buggy for PR {} is {}'.format(issue_number, buggy))
+                logger.info('Corrected for PR {} is {}'.format(pr_number, corrected))
+                logger.info('Buggy for PR {} is {}'.format(pr_number, buggy))
 
     df.to_csv(p_output_dir / 'concat_v3.csv', index=False)
 
@@ -142,11 +145,11 @@ def locally(framework, git_dir, pull_request_file, bash_script_file, parallel):
     """Extract commit and branching information for Pull Requests in cloned repository.
     
     Reads a local csv (`pull-request-file`) containing all the pull requests and reads
-    the `issue_number` value to launch a search script in the `git-dir`.
+    the `pr_number` value to launch a search script in the `git-dir`.
     """
     import time
     df = pd.read_csv(pull_request_file)
-    n = len(df.issue_number)
+    n = len(df.pr_number)
     def show_prog_item(item):
         return f"Pull Request #{item}"
 
@@ -164,7 +167,7 @@ def locally(framework, git_dir, pull_request_file, bash_script_file, parallel):
 
     output_root_path = Path('out/{}/diffs'.format(framework.lower()))
 
-    with click.progressbar(df.issue_number.values, length=n,
+    with click.progressbar(df.pr_number.values, length=n,
                             item_show_func=show_prog_item,
                             label="Finding commits for Pull Requests",
                             show_eta=True, show_pos=True,
@@ -184,7 +187,7 @@ def locally(framework, git_dir, pull_request_file, bash_script_file, parallel):
 
             with multiprocessing.Pool(8) as p:
                 for i in range(n):
-                    r = p.apply_async(task, (bash_script_file, df.issue_number.iloc[i], sp_env_vars, output_root_path), callback=done_handler, error_callback=err_handler)
+                    r = p.apply_async(task, (bash_script_file, df.pr_number.iloc[i], sp_env_vars, output_root_path), callback=done_handler, error_callback=err_handler)
                     tasks.append(r)
                 for t, _ in zip(tasks, bar):
                     # Append result from task which is status code or None if failed somwhere in between (in Python)
@@ -204,9 +207,9 @@ def locally(framework, git_dir, pull_request_file, bash_script_file, parallel):
                 logger.warning('There are {} failed tasks (return code not 0). Check output'.format(n_failed))
                 logger.info('Completed {} out of {} tasks.'.format(n_success, n))
         else:
-            for issue_number in bar:
+            for pr_number in bar:
                 if bash_script_file:
-                    task(bash_script_file, str(issue_number), sp_env_vars, output_root_path)
+                    task(bash_script_file, str(pr_number), sp_env_vars, output_root_path)
                 else:
                     raise NotImplementedError()
 
