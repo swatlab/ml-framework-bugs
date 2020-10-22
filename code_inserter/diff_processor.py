@@ -53,20 +53,40 @@ class DiffProcessor:
 		  - line_numbers: changed lines of 1 file 
 			--> [line_number_1, line_number_2, ..., line_number_n]
 		"""
-		regex = r"^@@ [-+](\d+)"
-		matches = re.finditer(regex, split_patch, re.MULTILINE)
-		line_numbers = []
+		regex_hunk = r"@@ [-+](?P<mhunk>\d+),(?P<mlen>\d+)\s\+(?P<phunk>\d+),(?P<plen>\d+)"
+		# Beginning and len of hunks of original file (minus) (m)
+		mh_begins, mh_lens = [], []
+		# Beginning and len of hunks of original file (plus) (p)
+		ph_begins, ph_lens = [], []
+		m_intra_hunk_offset, p_intra_hunk_offset = 0, 0
+		m_offset, p_offset = 0, 0
+		removals, adds = [], []
+		# Skip 4 lines that contain:
+		# diff --git a/file b/file
+		# index <sha>..<sha> 100644
+		# --- a/file
+		# +++ b/file
+		for line in split_patch.splitlines(keepends=False)[4:]:
+			mh = re.match(regex_hunk, line, re.MULTILINE)
+			if mh is not None:
+				g = mh.groupdict()
+				mh_begins.append(g['mhunk']); mh_lens.append(g['mlen']); ph_begins.append(g['phunk']); ph_begins.append(g['plen'])
+				m_offset, p_offset = g['mhunk'], g['phunk']
+				m_intra_hunk_offset, p_intra_hunk_offset = 0, 0
+			else:
+				if line.startswith('+ '):
+					ln = int(p_offset) + p_intra_hunk_offset
+					adds.append(ln)
+					p_intra_hunk_offset += 1
+				elif line.startswith('- '):
+					ln = int(m_offset) + m_intra_hunk_offset
+					removals.append(ln)
+					m_intra_hunk_offset += 1
+				else:
+					m_intra_hunk_offset += 1
+					p_intra_hunk_offset += 1
 		
-		for matchNum, match in enumerate(matches, start=1):
-			number = int(match.group(1))
-
-			# adjust number, because line indexes are line number - 1
-			# don't adjust 0, because will end up -1
-			if number != 0:
-				number = int(match.group(1)) - 1
-
-			line_numbers.append(number)
-		return line_numbers
+		return adds
 
 	def findChangedLinesPerFile(self, split_patchfile):
 		"""
