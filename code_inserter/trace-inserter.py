@@ -70,8 +70,8 @@ def diff(git_dir, pre, post, output_dir, write, prompt, yes):
             for l in adds:
                 if do_prompt:
                     _l, _r = max(0, l-n_context), min(len(_fc),l+n_context)
-                    _ctx = _fc[_l:_r]
                     # Simple echoing
+                    # _ctx = _fc[_l:_r]
                     # click.echo('Input here')
                     # click.echo('\n'.join(_ctx))
                     # ... or "fancy"
@@ -80,16 +80,20 @@ def diff(git_dir, pre, post, output_dir, write, prompt, yes):
                     click.echo('\n'.join(_fc[l+1:_r]))
                     if click.confirm('Add this trace in position:?'):
                         sed_cmd.append('-e'); sed_cmd.append(f'{l}i{what}')
+                        logging.debug('Added line {} to output'.format(l))
+                    else:
+                        logging.debug('User chose not to add to output at line {}'.format(l))
                 else:
                     sed_cmd.append('-e'); sed_cmd.append(f'{l}i{what}')
             if len(sed_cmd) == 1:
                 logging.info('No chunk to change. Returning original input.')
                 return og
+            logger.debug('Command to run')
             logger.debug(' '.join(sed_cmd))
             r = subprocess.run(sed_cmd, stdout=subprocess.PIPE, input=og.encode('utf-8'), check=True)
             return r.stdout.decode("utf-8")
         else:
-            return og
+            raise NotImplementedError()
 
     output_dir = Path(output_dir)
     logging.debug('Output dir is {}'.format(output_dir))
@@ -133,6 +137,8 @@ def diff(git_dir, pre, post, output_dir, write, prompt, yes):
                         logger.info('Cancelled write.')
                 else:
                     w()
+        else:
+            logging.info('Not writing output.')
 
 if __name__ == "__main__":
     cli()
