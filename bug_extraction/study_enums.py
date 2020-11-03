@@ -29,4 +29,6 @@ class StudyPhase2Field:
 class StudyPhase3Field:
     description: str = None
     comment: str = None
+    silent: bool = None
+    use_for_study: str = None
 
