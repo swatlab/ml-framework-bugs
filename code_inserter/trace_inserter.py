@@ -79,19 +79,22 @@ def diff(git_dir, pre, post, output_dir, write, prompt, yes, trace_content, trac
         if filename.endswith('.h') or filename.endswith('.cu') or filename.endswith('cuh') or filename.endswith('cpp'):
             logger.info('Detected C++ file')
             include_ix = [i for i, line in enumerate(_fc) if line.startswith('#include')]
+            def insert_auto_header():
+                # Choose last insertion point
+                header_ins = include_ix[-1]
+                if header_ins == 0:
+                    logger.warning('Automatic insertion of header tracing chose line 0. Will place at line 1.')
+                    header_ins = 1
+                else:
+                    logger.info('Automatic insertion of header at line {}'.format(header_ins))
+                header_insertions_line.append(header_ins)
+
             if len(include_ix) != 0:
                 logger.info('Found include')
                 for k in include_ix:
                     logger.debug('Line {}: Includes found {}'.format(k, _fc[k]))
                 if yes:
-                    # Choose last insertion point
-                    header_ins = include_ix[-1]
-                    if header_ins == 0:
-                        logger.warning('Automatic insertion of header tracing chose line 0. Will place at line 1.')
-                        header_ins = 1
-                    else:
-                        logger.info('Automatic insertion of header at line {}'.format(header_ins))
-                    header_insertions_line.append(header_ins)
+                    insert_auto_header()
                 else:
                     for i, line_no in enumerate(include_ix):
                         if line_no == 0:
@@ -99,11 +102,18 @@ def diff(git_dir, pre, post, output_dir, write, prompt, yes, trace_content, trac
                             continue
                         if do_prompt:
                             show_insertion(_fc, line_no, header, n_context=n_context)
-                            if click.confirm('[{}/{}] Add include here?'.format(i+1, len(include_ix))):
+                            choice = click.prompt('[{}/{}] Add include here?'.format(i+1, len(include_ix)),
+                                type=click.Choice(['y','n','a'], case_sensitive=False),
+                                default='y', show_choices=True)
+                            if choice == 'y':
                                 header_insertions_line.append(line_no)
                                 logger.debug('Added line {} to header output'.format(line_no))
-                            else:
+                            elif choice == 'n':
                                 logger.debug('User chose not to add header')
+                            elif choice == 'a':
+                                insert_auto_header()
+                                logger.debug('Automatic insertion at last and skipping.')
+                                break
                         else:
                             header_insertions_line.append(line_no)
                             logger.debug('Added line {} to header output'.format(line_no))
