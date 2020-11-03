@@ -46,7 +46,11 @@ def get_file_at_rev(git_dir, rev, p):
         git_dir = Path(git_dir)
     env_copy = os.environ.copy()
     env_copy['GIT_DIR'] = git_dir
-    f = subprocess.run(['git', 'show', '{}:{}'.format(rev, p)], stdout=subprocess.PIPE, env=env_copy, check=True)
+    try:
+        f = subprocess.run(['git', 'show', '{}:{}'.format(rev, p)], stdout=subprocess.PIPE, env=env_copy, check=True)
+    except:
+        # Assume file was not found
+        raise FileNotFoundError()
     return f.stdout.decode("utf-8")
 
 @click.group()
@@ -57,6 +61,7 @@ def cli():
 @cli.command()
 @click.argument('pre', type=str)
 @click.argument('post', type=str)
+@click.option('--insert-pre/--insert-post', required=True)
 @click.option('--write/--no-write', default=True)
 @click.option('--prompt/--no-prompt', default=True)
 @click.option('--output-dir', type=str, default=True)
@@ -64,7 +69,8 @@ def cli():
 @click.option('--git-dir', '-d', type=click.Path(exists=True, file_okay=False, resolve_path=True))
 @click.option('--trace-content', type=str, default="""tracef('TracePoint: BugTriggered');""")
 @click.option('--trace-header', type=str, default="""#include <lttng/tracef.h>""")
-def diff(git_dir, pre, post, output_dir, write, prompt, yes, trace_content, trace_header):
+@click.pass_context
+def diff(ctx, git_dir, pre, post, output_dir, write, prompt, yes, trace_content, trace_header, insert_pre):
     def insert_trace(og, adds, what, do_prompt=False, n_context=3, filename=None, header=None):
         _fc = og.splitlines()
         def show_insertion(lines, ins_ix, content, n_context):
@@ -160,11 +166,32 @@ def diff(git_dir, pre, post, output_dir, write, prompt, yes, trace_content, trac
     written_files = []
     for f in files:
         logger.info('For file {}'.format(f))
+
+        # Get changes from pre to post to know what was changed
+        # in the fixed version (post).
         diff_for_f = diff_file(git_dir, pre, post, f)
-        lines_changed = dp.findChangedLines(diff_for_f)
+
+        # Additions denote lines that were changed
+        # If looking for changes in pre, we can use the
+        # additions
+        left_ch, right_ch = dp.findChangedLines(diff_for_f)
+        lines_changed = left_ch if insert_pre else right_ch
+
         # Get file content at revision
         logger.info('Lines {}'.format(' '.join(map(str,lines_changed))))
-        fc = get_file_at_rev(git_dir, post, f)
+        # Changes the post revision with information about adds
+
+        # Get correct file version
+        # Changes will be made using the additions and removals information
+        rev = pre if insert_pre else post
+        try:
+            fc = get_file_at_rev(git_dir, rev, f)
+        except FileNotFoundError as err:
+            logging.info('File {} at revision {} was not found. See error in debug logs'.format(f, rev))
+            continue
+            logging.debug(err)
+
+        # Make prompt
         prompt_insert = (not yes) and prompt
         new_file_content = insert_trace(fc, lines_changed, what=trace_content, header=trace_header, do_prompt=prompt_insert, filename=f)
         logger.debug('New content')
