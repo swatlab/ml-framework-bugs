@@ -66,6 +66,7 @@ class DiffProcessor:
 		# index <sha>..<sha> 100644
 		# --- a/file
 		# +++ b/file
+		left_mod, right_mod = [], []
 		for line in split_patch.splitlines(keepends=False)[4:]:
 			mh = re.match(regex_hunk, line, re.MULTILINE)
 			if mh is not None:
@@ -77,16 +78,20 @@ class DiffProcessor:
 				if line.startswith('+ '):
 					ln = int(p_offset) + p_intra_hunk_offset
 					adds.append(ln)
+					left_mod.append(int(m_offset) + m_intra_hunk_offset)
+					right_mod.append(int(p_offset) + p_intra_hunk_offset)
 					p_intra_hunk_offset += 1
 				elif line.startswith('- '):
 					ln = int(m_offset) + m_intra_hunk_offset
 					removals.append(ln)
+					left_mod.append(int(m_offset) + m_intra_hunk_offset)
+					right_mod.append(int(p_offset) + p_intra_hunk_offset)
 					m_intra_hunk_offset += 1
 				else:
 					m_intra_hunk_offset += 1
 					p_intra_hunk_offset += 1
 		
-		return adds
+		return left_mod, right_mod
 
 	def findChangedLinesPerFile(self, split_patchfile):
 		"""
