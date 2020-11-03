@@ -7,13 +7,6 @@ from diff_processor import DiffProcessor
 import colorama
 
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-console_h = logging.StreamHandler()
-console_h.setLevel(logging.INFO)
-debug_fh = logging.FileHandler('debug.log', mode='w')
-debug_fh.setLevel(logging.DEBUG)
-logger.addHandler(debug_fh)
-logger.addHandler(console_h)
 
 def git_diff(git_dir, rev1, rev2):
     if isinstance(git_dir, str):
@@ -223,4 +216,11 @@ def diff(ctx, git_dir, pre, post, output_dir, write, prompt, yes, trace_content,
         logging.info('Wrote file {}'.format(wf))
 
 if __name__ == "__main__":
+    logger.setLevel(logging.DEBUG)
+    console_h = logging.StreamHandler()
+    console_h.setLevel(logging.INFO)
+    debug_fh = logging.FileHandler('debug.log', mode='w')
+    debug_fh.setLevel(logging.DEBUG)
+    logger.addHandler(debug_fh)
+    logger.addHandler(console_h)
     cli()
