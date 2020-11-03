@@ -108,8 +108,8 @@ def merge_to_mother_dataframe(new_df, mother_df, columns, overwrite_columns=True
 @click.argument('new', type=click.Path(dir_okay=False, exists=True))
 @click.argument('columns', nargs=-1)
 @click.option('--output-file', default=None)
-@click.option('--overwrite-columns', default=True)
-@click.option('--use-new-columns', default=True)
+@click.option('--overwrite-columns', is_flag=True)
+@click.option('--use-new-columns', is_flag=True)
 def merge(mother, new, columns, overwrite_columns, use_new_columns, output_file):
     logger.info('Using columns {}'.format(columns))
     df = merge_to_mother_dataframe(new_df=new, mother_df=mother, columns=columns, overwrite_columns=overwrite_columns, can_have_new_columns=use_new_columns)
