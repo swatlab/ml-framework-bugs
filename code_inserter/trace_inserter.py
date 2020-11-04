@@ -60,11 +60,15 @@ def cli():
 @click.option('--output-dir', type=str, default=True)
 @click.option('--yes', is_flag=True, help="Choose sensible values and no prompt")
 @click.option('--git-dir', '-d', type=click.Path(exists=True, file_okay=False, resolve_path=True))
-@click.option('--trace-content', type=str, default="""tracef('TracePoint: BugTriggered');""")
-@click.option('--trace-header', type=str, default="""#include <lttng/tracef.h>""")
+@click.option('--c-trace-content', type=str, default="""tracef("TracePoint: BugTriggered");""")
+@click.option('--c-trace-header', type=str, default="""#include <lttng/tracef.h>""")
+@click.option('--py-trace-content', type=str, default="""print("Tracepoint BugTriggered")""")
+@click.option('--py-trace-header', type=str, default="""""")
 @click.pass_context
-def diff(ctx, git_dir, pre, post, output_dir, write, prompt, yes, trace_content, trace_header, insert_pre):
-    def insert_trace(og, adds, what, do_prompt=False, n_context=3, filename=None, header=None):
+def diff(ctx, git_dir, pre, post, output_dir, write, prompt, yes, c_trace_content, c_trace_header, py_trace_content, py_trace_header, insert_pre):
+
+    # Long ass contextful function to insert trace
+    def insert_trace(og, adds, what, do_prompt=False, n_context=3, filename=None, header=None, match_identation=True):
         _fc = og.splitlines()
         def show_insertion(lines, ins_ix, content, n_context):
             _l, _r = max(0, ins_ix-n_context), min(len(lines),ins_ix+n_context)
@@ -75,8 +79,7 @@ def diff(ctx, git_dir, pre, post, output_dir, write, prompt, yes, trace_content,
         sed_cmd = ['sed']
         # Ask for header insertion
         header_insertions_line = []
-        if filename.endswith('.h') or filename.endswith('.cu') or filename.endswith('cuh') or filename.endswith('cpp'):
-            logger.info('Detected C++ file')
+        if Path(filename).suffix in {'.h', '.cu', '.cuh', '.cpp'}:
             include_ix = [i for i, line in enumerate(_fc) if line.startswith('#include')]
             def insert_auto_header():
                 # Choose last insertion point
@@ -145,6 +148,18 @@ def diff(ctx, git_dir, pre, post, output_dir, write, prompt, yes, trace_content,
         r = subprocess.run(sed_cmd, stdout=subprocess.PIPE, input=og.encode('utf-8'), check=True)
         return r.stdout.decode("utf-8")
 
+    
+    # Contextful determination of which trace to put
+    def get_trace_replacement(filename, file_contents):
+        """Returns a trace content and trace header based on file content"""
+        f = Path(filename)
+        logger.debug('Suffix of {} is {}'.format(f, f.suffix))
+        if f.suffix == '.py':
+            return py_trace_content, py_trace_header
+        else:
+            return c_trace_content, c_trace_header
+
+
     output_dir = Path(output_dir)
     logging.debug('Output dir is {}'.format(output_dir))
 
@@ -186,6 +201,7 @@ def diff(ctx, git_dir, pre, post, output_dir, write, prompt, yes, trace_content,
 
         # Make prompt
         prompt_insert = (not yes) and prompt
+        trace_content, trace_header = get_trace_replacement(f, fc)
         new_file_content = insert_trace(fc, lines_changed, what=trace_content, header=trace_header, do_prompt=prompt_insert, filename=f)
         logger.debug('New content')
         #logger.debug(new_file_content)
