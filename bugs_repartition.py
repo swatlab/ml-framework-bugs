@@ -6,6 +6,7 @@ import code_inserter.trace_inserter as trace_inserter
 import logging
 import pandas as pd
 from pathlib import Path
+import colorama
 
 logger = logging.getLogger()
 
@@ -51,11 +52,30 @@ def git_cmd(git_dir, cmd, *args, **kwargs):
     return result_cmd.returncode, result_cmd.stdout.decode("utf-8")
 
 def long_commit_version(git_dir, sha):
-    return git_cmd(git_dir, 'rev-parse', sha, verify=None)
+    err, v = git_cmd(git_dir, 'rev-parse', sha, verify=None)
+    if err != 0:
+        raise Exception('Unable to parse version')
+    return v.strip()
 
 
 # To clear branches locally, you can
 # git branch -l 'study*'|xargs git branch -D
+
+def ensure_path(p):
+    if not isinstance(p, Path):
+        return Path(p)
+
+def file_was_deleted(git_dir, path, pre, post):
+    err, name_statuses = git_cmd(git_dir, 'diff', pre, post, name_status=None)
+    # TODO: Better
+    p = ensure_path(git_dir).parent
+    f = str(path.relative_to(p))
+    for ns in name_statuses.splitlines():
+        if f in ns:
+            # First char is status
+            if ns[0] in {'D','A'}:
+                return True
+    return False
 
 
 @cli.command()
@@ -85,11 +105,12 @@ def setup_study(ctx, csv_file, git_dir, use_all, insert_trace, setup_branch):
         rdf = df
 
     c_trace_header = """#include <lttng/tracef.h>"""
-    c_trace_content= """tracef("TracePoint: BugTriggered");"""
+    # Check if we should customize per study
+    c_trace_content= """tracef("TracePoint: Bug Triggered");"""
     py_trace_header = ""
-    py_trace_content = """print("Tracepoint BugTriggered")"""
+    # Check if we should customize per study
+    py_trace_content = """print("Tracepoint Bug Triggered")"""
     
-
     logger.info('{} rows used as starting point'.format(rdf.shape[0]))
     for i, (loc, row) in enumerate(rdf.iterrows()):
         bid = row['pr_number']  # Bug identifier
@@ -104,6 +125,7 @@ def setup_study(ctx, csv_file, git_dir, use_all, insert_trace, setup_branch):
         logger.info('Buggy commit: {}'.format(bg_cm))
         logger.info('Corrected commit: {}'.format(cor_cm))
 
+        # Get files that changed between both commits
         file_changes = trace_inserter.diff_file_paths(git_dir, bg_cm, cor_cm)
         logger.info(file_changes)
         has_cuda = changes_cuda_related(file_changes)
@@ -112,9 +134,12 @@ def setup_study(ctx, csv_file, git_dir, use_all, insert_trace, setup_branch):
             logger.info('Experience {} is CUDA related'.format(xp_n))
 
         study_branch, study_branch_buggy, study_branch_corrected  = xp_n, f'{xp_n}-buggy', f'{xp_n}-corrected'
-        _, long_bug = long_commit_version(git_dir, bg_cm)
-        _, long_cor = long_commit_version(git_dir, cor_cm)
+        long_bug = long_commit_version(git_dir, bg_cm)
+        long_cor = long_commit_version(git_dir, cor_cm)
         assert long_bug != '' and long_cor != ''
+
+        do_commit = True
+        full_auto_trace = True
 
         if setup_branch:
             # 1 Check if branch exists
@@ -136,13 +161,14 @@ def setup_study(ctx, csv_file, git_dir, use_all, insert_trace, setup_branch):
                 git_cmd(git_dir, 'checkout', cor_cm , B=study_branch)
 
             # Now at study branch, ex `study-prXXXX`
-            _, pointing = long_commit_version(git_dir, 'HEAD')
-            _, parent = long_commit_version(git_dir, 'HEAD^')
+            pointing = long_commit_version(git_dir, 'HEAD')
+            parent = long_commit_version(git_dir, 'HEAD^')
             if pointing == long_cor:
                 # study branch still points at corrected version, we revert it
                 # assert long_commit_version(git_dir, 'HEAD')[1] == long_cor
                 # Revert long_cor which should be HEAD
-                git_cmd(git_dir, 'revert', long_cor, no_edit=None)
+                err, out = git_cmd(git_dir, 'revert', long_cor, no_edit=None)
+                assert err == 0
             else:
                 logger.debug('Pointing commit is {}'.format(pointing))
                 logger.debug('Parent commit is {}'.format(parent))
@@ -163,37 +189,67 @@ def setup_study(ctx, csv_file, git_dir, use_all, insert_trace, setup_branch):
             git_cmd(git_dir, 'checkout', study_branch, B=study_branch_buggy)
 
             # We should now have 3 branches for the one study, all starting from corrected commit
-
+        top_level = git_cmd(git_dir, 'rev-parse', show_toplevel=None)[1].strip()
         if insert_trace:
             trace_output_p = Path('out/trace_insertions/{}'.format(xp_n))
             trace_output_p.mkdir(exist_ok=True,parents=True)
 
-            # Buggy commit trace insertion
-            # Trace insert considers the post version to put the traces
-            # so...
-            logger.info('Trace inserting for type buggy')
-            ctx.invoke(trace_inserter.diff, pre=bg_cm, post=cor_cm, git_dir=git_dir,
-                output_dir=trace_output_p / 'buggy',
-                write=True, prompt=True, insert_pre=True,
-                c_trace_header=c_trace_header,
-                c_trace_content=c_trace_content,
-                py_trace_header=py_trace_header,
-                py_trace_content=py_trace_content,
-                yes=True)
-            
-            # Corrected commit trace insertion
-            logger.info('Trace inserting for type corrected')
-            ctx.invoke(trace_inserter.diff, pre=bg_cm, post=cor_cm, git_dir=git_dir,
-                output_dir=trace_output_p / 'corrected',
-                write=True, prompt=True, insert_pre=True,
-                c_trace_header=c_trace_header,
-                c_trace_content=c_trace_content,
-                py_trace_header=py_trace_header,
-                py_trace_content=py_trace_content,
-                yes=True)
-            # ctx.invoke(trace_inserter.diff, pre=bg_cm, post=cor_cm, git_dir=git_dir, output_dir=trace_output_p / 'corrected' , write=True, prompt=True, insert_pre=False, yes=True)
+            for t in {'buggy', 'corrected'}:
+                logger.info('Trace inserting for type {}'.format(t))
+                if t == 'buggy':
+                    # Checkout buggy branch
+                    err, _ = git_cmd(git_dir, 'checkout', study_branch_buggy)
+                else:
+                    err, _ = git_cmd(git_dir, 'checkout', study_branch_corrected)
+                assert err == 0
+                # TODO: Decide if commit in between
+                for f_ix, file_c in enumerate(file_changes):
+                    logging.debug('Treating {}'.format(file_c))
+                    _f = Path(file_c)
+                    repo_file_path = Path(top_level).joinpath(_f)
+                    # File deletion does not wrk in this case
+                    # if t == 'buggy':
+                    #     pre = 
+                    if file_was_deleted(git_dir, repo_file_path, bg_cm, cor_cm):
+                        logging.info('File {} was deleted in post. Skipping...'.format(repo_file_path))
+                        continue
+                    assert repo_file_path.exists()
 
-            logging.info('Saving traces to {}'.format(trace_output_p))
+                    prompt_ctx = colorama.Fore.BLUE + "{}[{}/{}] File {}".format(t, f_ix, len(file_changes), repo_file_path) + colorama.Fore.RESET
+                    # For buggy version, use insert_pre=True
+                    if t == 'buggy':
+                        # For buggy version, use insert_pre=True
+                        fc, lines_changed = trace_inserter.get_content_and_changed_lines(git_dir, file=file_c, pre=bg_cm, post=cor_cm, insert_pre=True)
+                    else:
+                        # For corrected version, use inser_post=True
+                        fc, lines_changed = trace_inserter.get_content_and_changed_lines(git_dir, file=file_c, pre=bg_cm, post=cor_cm, insert_post=True)
+
+                    if _f.suffix in {'.cpp', '.h'}:
+                        trace_content, trace_header = c_trace_content, c_trace_header
+                    elif _f.suffix in {'.cu', '.cuh'}:
+                        logger.warning('Cannot insert traces in CUDA file at the moment. Skipping file...')
+                        continue
+                    elif _f.suffix in {'.py'}:
+                        trace_content, trace_header = py_trace_content, py_trace_header
+                    else:
+                        logger.warning("File not supported for trace insertion: {}".format(file_c))
+
+                    # See `trace_inserter.insert_trace` for full signature
+                    new_file_content = trace_inserter.insert_trace(fc, lines_changed,
+                        what=trace_content, header=trace_header,
+                        do_prompt=not full_auto_trace,
+                        filename=file_c,
+                        prompt_ctx=prompt_ctx)
+
+                    if do_commit:
+                        with open(repo_file_path, 'w') as f:
+                            f.write(new_file_content)
+                if do_commit:
+                    commit_message = """ "Study: Add traced content" """
+                    # TODO: Treat file individually
+                    # err, mes = git_cmd(git_dir, 'add', *file_changes)
+                    err, mes = git_cmd(git_dir, 'commit', '-am', commit_message)
+                    assert err == 0
 
     logger.info('CUDA related commit: {}'.format(cuda_related_c))
     logger.info('Treatable commit: {}'.format(treatable_c))
