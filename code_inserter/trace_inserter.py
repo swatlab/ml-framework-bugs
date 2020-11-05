@@ -76,7 +76,7 @@ def get_content_and_changed_lines(git_dir, file, pre, post, insert_pre=False, in
 
 
 # Long ass contextful function to insert trace
-def insert_trace(file_content, changed_lines, what, do_prompt=False, n_context=3, filename=None, header=None, match_identation=True, auto_insert_header=False):
+def insert_trace(file_content, changed_lines, what, do_prompt=False, n_context=3, filename=None, header=None, match_identation=True, auto_insert_header=False, prompt_ctx=None):
     _fc = file_content.splitlines()
     def show_insertion(lines, ins_ix, content, n_context):
         _l, _r = max(0, ins_ix-n_context), min(len(lines),ins_ix+n_context)
@@ -112,7 +112,7 @@ def insert_trace(file_content, changed_lines, what, do_prompt=False, n_context=3
                         continue
                     if do_prompt:
                         show_insertion(_fc, line_no, header, n_context=n_context)
-                        choice = click.prompt('[{}/{}] Add include here?'.format(i+1, len(include_ix)),
+                        choice = click.prompt('{}[{}/{}] Add include here?'.format('{}\n'.format(prompt_ctx) if prompt_ctx else '',i+1, len(include_ix)),
                             type=click.Choice(['y','n','a'], case_sensitive=False),
                             default='y', show_choices=True)
                         if choice == 'y':
@@ -141,7 +141,7 @@ def insert_trace(file_content, changed_lines, what, do_prompt=False, n_context=3
     for i, line_no in enumerate(changed_lines):
         if do_prompt:
             show_insertion(_fc, line_no, content=what, n_context=n_context)
-            if click.confirm('[{}/{}] Add this trace in position:?'.format(i, len(changed_lines))):
+            if click.confirm("""{}[{}/{}] Add this trace in position:?""".format('{}\n'.format(prompt_ctx) if prompt_ctx else '', i, len(changed_lines))):
                 sed_cmd.append('-e'); sed_cmd.append(f'{line_no}i{what}')
                 logger.debug('Added line {} to output'.format(line_no))
             else:
@@ -195,7 +195,7 @@ def diff(ctx, git_dir, pre, post, output_dir, write, prompt, yes, c_trace_conten
         logger.info(f)
 
     written_files = []
-    for f in files:
+    for i, f in enumerate(files):
         logger.info('For file {}'.format(f))
         try:
             fc, lines_changed = get_content_and_changed_lines(git_dir, f, pre=pre, post=post, insert_pre=insert_pre, insert_post=not insert_pre)
@@ -207,7 +207,8 @@ def diff(ctx, git_dir, pre, post, output_dir, write, prompt, yes, c_trace_conten
         # Make prompt
         prompt_insert = (not yes) and prompt
         trace_content, trace_header = get_trace_replacement(f, fc)
-        new_file_content = insert_trace(fc, lines_changed, what=trace_content, header=trace_header, do_prompt=prompt_insert, filename=f)
+        prompt_ctx = "[{}/{}] File: {}".format(i, len(files), f)
+        new_file_content = insert_trace(fc, lines_changed, what=trace_content, header=trace_header, do_prompt=prompt_insert, filename=f, prompt_ctx=prompt_ctx)
         logger.debug('New content')
         #logger.debug(new_file_content)
 
