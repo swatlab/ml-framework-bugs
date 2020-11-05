@@ -3,7 +3,7 @@ import click
 import logging
 from pathlib import Path
 import subprocess
-from diff_processor import DiffProcessor
+from .diff_processor import DiffProcessor
 import colorama
 
 logger = logging.getLogger()
@@ -50,6 +50,112 @@ def get_file_at_rev(git_dir, rev, p):
 def cli():
     pass
 
+def get_content_and_changed_lines(git_dir, file, pre, post, insert_pre=False, insert_post=False):
+    """Given a file between revisions `pre` and `post` return content and lines that were changed
+        depending if we want to insert traces before the change (`insert_pre = True`) or after the
+        change (`insert_post=True`).
+    """
+    if insert_pre and insert_post:
+        raise ValueError('Only one of insert_pre and insert_post can be True.')
+    elif not (insert_pre or insert_post):
+        raise ValueError('At least one of insert_pre and insert_post should be set.')
+    # Get changes from pre to post to know what was changed
+    # in the fixed version (post).
+    diff_for_f = diff_file(git_dir, pre, post, file)
+    # Additions denote lines that were changed
+    # If looking for changes in pre, we can use the
+    # additions
+    _dp = DiffProcessor(git_dir)
+    left_ch, right_ch = _dp.findChangedLines(diff_for_f)
+    lines_changed = left_ch if insert_pre else right_ch
+    # Get correct file version
+    # Changes will be made using the additions and removals information
+    rev = pre if insert_pre else post
+    fc = get_file_at_rev(git_dir, rev, file)
+    return fc, lines_changed
+
+
+# Long ass contextful function to insert trace
+def insert_trace(file_content, changed_lines, what, do_prompt=False, n_context=3, filename=None, header=None, match_identation=True, auto_insert_header=False):
+    _fc = file_content.splitlines()
+    def show_insertion(lines, ins_ix, content, n_context):
+        _l, _r = max(0, ins_ix-n_context), min(len(lines),ins_ix+n_context)
+        click.echo('\n'.join(lines[_l:ins_ix]))
+        click.echo(colorama.Fore.GREEN + content +colorama.Fore.RESET)
+        click.echo('\n'.join(lines[ins_ix+1:_r]))
+    if auto_insert_header and not do_prompt:
+        logging.warning('Prompt disabled and insert header automatically used. Will put header automatically without prompt.')
+    sed_cmd = ['sed']
+    # Ask for header insertion
+    header_insertions_line = []
+    if Path(filename).suffix in {'.h', '.cu', '.cuh', '.cpp'}:
+        include_ix = [i for i, line in enumerate(_fc) if line.startswith('#include')]
+        def insert_auto_header():
+            # Choose last insertion point
+            header_ins = include_ix[-1]
+            if header_ins == 0:
+                logger.warning('Automatic insertion of header tracing chose line 0. Will place at line 1.')
+                header_ins = 1
+            else:
+                logger.info('Automatic insertion of header at line {}'.format(header_ins))
+            header_insertions_line.append(header_ins)
+        if len(include_ix) != 0:
+            logger.info('Found include')
+            for k in include_ix:
+                logger.debug('Line {}: Includes found {}'.format(k, _fc[k]))
+            if auto_insert_header:
+                insert_auto_header()
+            else:
+                for i, line_no in enumerate(include_ix):
+                    if line_no == 0:
+                        logger.info('Insertion at 0 unsupported')
+                        continue
+                    if do_prompt:
+                        show_insertion(_fc, line_no, header, n_context=n_context)
+                        choice = click.prompt('[{}/{}] Add include here?'.format(i+1, len(include_ix)),
+                            type=click.Choice(['y','n','a'], case_sensitive=False),
+                            default='y', show_choices=True)
+                        if choice == 'y':
+                            header_insertions_line.append(line_no)
+                            logger.debug('Added line {} to header output'.format(line_no))
+                        elif choice == 'n':
+                            logger.debug('User chose not to add header')
+                        elif choice == 'a':
+                            insert_auto_header()
+                            logger.debug('Automatic insertion at last and skipping.')
+                            break
+                    else:
+                        header_insertions_line.append(line_no)
+                        logger.debug('Added line {} to header output'.format(line_no))
+    else:
+        logger.info('File {} not supported for header insertion'.format(filename))
+
+    # Insert header
+    if len(header_insertions_line) != 0:
+        for header_lin in header_insertions_line:
+            sed_cmd.append('-e'); sed_cmd.append(f'{header_lin}i{header}')
+    else:
+        logger.info('No suitable header insertion point was found')
+
+    # Ask for trace insertion
+    for i, line_no in enumerate(changed_lines):
+        if do_prompt:
+            show_insertion(_fc, line_no, content=what, n_context=n_context)
+            if click.confirm('[{}/{}] Add this trace in position:?'.format(i, len(changed_lines))):
+                sed_cmd.append('-e'); sed_cmd.append(f'{line_no}i{what}')
+                logger.debug('Added line {} to output'.format(line_no))
+            else:
+                logger.debug('User chose not to add to output at line {}'.format(line_no))
+        else:
+            sed_cmd.append('-e'); sed_cmd.append(f'{line_no}i{what}')
+    if len(sed_cmd) == 1:
+        logger.info('No chunk to change. Returning original input.')
+        return file_content
+    logger.debug('Command to run')
+    logger.debug(' '.join(sed_cmd))
+    r = subprocess.run(sed_cmd, stdout=subprocess.PIPE, input=file_content.encode('utf-8'), check=True)
+    return r.stdout.decode("utf-8")
+
 
 @cli.command()
 @click.argument('pre', type=str)
@@ -66,89 +172,6 @@ def cli():
 @click.option('--py-trace-header', type=str, default="""""")
 @click.pass_context
 def diff(ctx, git_dir, pre, post, output_dir, write, prompt, yes, c_trace_content, c_trace_header, py_trace_content, py_trace_header, insert_pre):
-
-    # Long ass contextful function to insert trace
-    def insert_trace(og, adds, what, do_prompt=False, n_context=3, filename=None, header=None, match_identation=True):
-        _fc = og.splitlines()
-        def show_insertion(lines, ins_ix, content, n_context):
-            _l, _r = max(0, ins_ix-n_context), min(len(lines),ins_ix+n_context)
-            click.echo('\n'.join(lines[_l:ins_ix]))
-            click.echo(colorama.Fore.GREEN + content +colorama.Fore.RESET)
-            click.echo('\n'.join(lines[ins_ix+1:_r]))
-        
-        sed_cmd = ['sed']
-        # Ask for header insertion
-        header_insertions_line = []
-        if Path(filename).suffix in {'.h', '.cu', '.cuh', '.cpp'}:
-            include_ix = [i for i, line in enumerate(_fc) if line.startswith('#include')]
-            def insert_auto_header():
-                # Choose last insertion point
-                header_ins = include_ix[-1]
-                if header_ins == 0:
-                    logger.warning('Automatic insertion of header tracing chose line 0. Will place at line 1.')
-                    header_ins = 1
-                else:
-                    logger.info('Automatic insertion of header at line {}'.format(header_ins))
-                header_insertions_line.append(header_ins)
-
-            if len(include_ix) != 0:
-                logger.info('Found include')
-                for k in include_ix:
-                    logger.debug('Line {}: Includes found {}'.format(k, _fc[k]))
-                if yes:
-                    insert_auto_header()
-                else:
-                    for i, line_no in enumerate(include_ix):
-                        if line_no == 0:
-                            logger.info('Insertion at 0 unsupported')
-                            continue
-                        if do_prompt:
-                            show_insertion(_fc, line_no, header, n_context=n_context)
-                            choice = click.prompt('[{}/{}] Add include here?'.format(i+1, len(include_ix)),
-                                type=click.Choice(['y','n','a'], case_sensitive=False),
-                                default='y', show_choices=True)
-                            if choice == 'y':
-                                header_insertions_line.append(line_no)
-                                logger.debug('Added line {} to header output'.format(line_no))
-                            elif choice == 'n':
-                                logger.debug('User chose not to add header')
-                            elif choice == 'a':
-                                insert_auto_header()
-                                logger.debug('Automatic insertion at last and skipping.')
-                                break
-                        else:
-                            header_insertions_line.append(line_no)
-                            logger.debug('Added line {} to header output'.format(line_no))
-        else:
-            logger.info('File {} not supported for header insertion'.format(filename))
-
-        # Insert header
-        if len(header_insertions_line) != 0:
-            for header_lin in header_insertions_line:
-                sed_cmd.append('-e'); sed_cmd.append(f'{header_lin}i{header}')
-        else:
-            logger.info('No suitable header insertion point was found')
-
-        # Ask for trace insertion
-        for i, line_no in enumerate(adds):
-            if do_prompt:
-                show_insertion(_fc, line_no, content=what, n_context=n_context)
-                if click.confirm('[{}/{}] Add this trace in position:?'.format(i, len(adds))):
-                    sed_cmd.append('-e'); sed_cmd.append(f'{line_no}i{what}')
-                    logger.debug('Added line {} to output'.format(line_no))
-                else:
-                    logger.debug('User chose not to add to output at line {}'.format(line_no))
-            else:
-                sed_cmd.append('-e'); sed_cmd.append(f'{line_no}i{what}')
-        if len(sed_cmd) == 1:
-            logger.info('No chunk to change. Returning original input.')
-            return og
-        logger.debug('Command to run')
-        logger.debug(' '.join(sed_cmd))
-        r = subprocess.run(sed_cmd, stdout=subprocess.PIPE, input=og.encode('utf-8'), check=True)
-        return r.stdout.decode("utf-8")
-
-    
     # Contextful determination of which trace to put
     def get_trace_replacement(filename, file_contents):
         """Returns a trace content and trace header based on file content"""
@@ -170,30 +193,12 @@ def diff(ctx, git_dir, pre, post, output_dir, write, prompt, yes, c_trace_conten
     logger.info('Files changed:')
     for f in files:
         logger.info(f)
-    dp = DiffProcessor(git_dir)
+
     written_files = []
     for f in files:
         logger.info('For file {}'.format(f))
-
-        # Get changes from pre to post to know what was changed
-        # in the fixed version (post).
-        diff_for_f = diff_file(git_dir, pre, post, f)
-
-        # Additions denote lines that were changed
-        # If looking for changes in pre, we can use the
-        # additions
-        left_ch, right_ch = dp.findChangedLines(diff_for_f)
-        lines_changed = left_ch if insert_pre else right_ch
-
-        # Get file content at revision
-        logger.info('Lines {}'.format(' '.join(map(str,lines_changed))))
-        # Changes the post revision with information about adds
-
-        # Get correct file version
-        # Changes will be made using the additions and removals information
-        rev = pre if insert_pre else post
         try:
-            fc = get_file_at_rev(git_dir, rev, f)
+            fc, lines_changed = get_content_and_changed_lines(git_dir, f, pre=pre, post=post, insert_pre=insert_pre, insert_post=not insert_pre)
         except FileNotFoundError as err:
             logging.info('File {} at revision {} was not found. See error in debug logs'.format(f, rev))
             continue
